@@ -529,10 +529,32 @@ body::after {
       <div class="step-dot active" id="dot1"></div>
       <div class="step-dot" id="dot2"></div>
       <div class="step-dot" id="dot3"></div>
+      <div class="step-dot" id="dot4"></div>
+    </div>
+
+    <!-- STEP 0: PIN -->
+    <div class="step-panel active" id="step0">
+      <div class="step-title">Εξουσιοδότηση</div>
+      <div class="step-heading">Εισάγετε PIN</div>
+      <p style="font-size:13px;color:var(--mid);margin-bottom:20px;font-style:italic;line-height:1.6;">Η πρόσβαση στην πλατφόρμα εκπαίδευσης είναι περιορισμένη. Εισάγετε τον κωδικό σας για να συνεχίσετε.</p>
+
+      <div class="search-wrap" style="margin-bottom:8px;">
+        <span class="search-icon">🔒</span>
+        <input class="search-input" id="pinInput" type="password"
+          placeholder="••••"
+          maxlength="10"
+          style="text-align:center;font-size:22px;letter-spacing:8px;"
+          onkeydown="if(event.key==='Enter')checkPin()">
+      </div>
+      <div class="field-error" id="pinError"></div>
+
+      <button class="btn-primary" onclick="checkPin()">
+        🔓 Είσοδος
+      </button>
     </div>
 
     <!-- STEP 1: ROLE -->
-    <div class="step-panel active" id="step1">
+    <div class="step-panel" id="step1">
       <div class="step-title">Βήμα 1 από 3</div>
       <div class="step-heading">Ποιος είσαι;</div>
 
@@ -640,7 +662,7 @@ body::after {
 
   </div>
 
-  <div class="footer">4A EXPRESS · TRAINING PLATFORM · v3.0</div>
+  <div class="footer">4A EXPRESS · TRAINING PLATFORM · v3.1 · 15/04/2026</div>
 </div>
 
 <script>
@@ -672,6 +694,21 @@ const driverModules = [
   { code:'D04', icon:'🏦', name:'Ταμείο Οδηγών', desc:'Μετρητά & αποδείξεις', color:'#8b5cf6', status:'soon', file:'' },
   { code:'D05', icon:'🚗', name:'Στόλος', desc:'Διαχείριση οχημάτων', color:'#10b981', status:'soon', file:'' },
 ];
+
+// ── PIN ──
+const ACCESS_PIN = '1111';
+
+function checkPin() {
+  const pin = document.getElementById('pinInput').value.trim();
+  if (pin === ACCESS_PIN) {
+    document.getElementById('pinError').textContent = '';
+    setStep(1);
+  } else {
+    document.getElementById('pinError').textContent = '❌ Λάθος PIN — δοκίμασε ξανά.';
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').focus();
+  }
+}
 
 // ── STATE ──
 let selectedRole = null;
@@ -858,14 +895,17 @@ async function logToExcel(module, score, total, errors) {
 
 // ── NAVIGATION ──
 function setStep(n) {
-  document.querySelectorAll('.step-panel').forEach((p,i) => p.classList.toggle('active', i+1 === n));
-  for (let i=1; i<=3; i++) {
-    const dot = document.getElementById('dot'+i);
+  // step0=PIN, step1=Role, step2=Office, step3=Employee, step4=Modules
+  const panels = document.querySelectorAll('.step-panel');
+  panels.forEach((p, i) => p.classList.toggle('active', i === n));
+  // Dots: only for steps 1-3 (indices 1-3)
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById('dot' + i);
     if (!dot) continue;
     dot.className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
   }
-  // Hide dots on step 4
-  document.querySelector('.step-indicator').style.display = n === 4 ? 'none' : 'flex';
+  // Hide dots on PIN (step0) and Modules (step4)
+  document.querySelector('.step-indicator').style.display = (n === 0 || n === 4) ? 'none' : 'flex';
 }
 
 function goStep1() { setStep(1); }
@@ -882,12 +922,14 @@ function resetAll() {
   document.getElementById('step1Btn').disabled = true;
   document.getElementById('step2Btn').disabled = true;
   document.getElementById('step3Btn').disabled = true;
+  document.getElementById('pinInput').value = '';
   clearEmployee();
-  document.querySelector('.step-indicator').style.display = 'flex';
+  setStep(0);
 }
 
-// Init dropdown on load
+// Init
 document.addEventListener('DOMContentLoaded', () => {
+  setStep(0);
   renderDropdown(employees);
 });
 </script>
