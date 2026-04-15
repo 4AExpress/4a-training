@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo — Client Search</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inconsolata:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --red: #cc1020;
+  --bg: #f5f3ef;
+  --border: #ddd5c8;
+  --dark: #1a1208;
+  --mid: #4a3f35;
+  --muted: #9e8e80;
+  /* CMS colors */
+  --cms-header: #cc1020;
+  --cms-label-red: #cc1020;
+  --cms-input-border: #adb5bd;
+  --cms-dropdown-green: #2d6a2d;
+  --cms-dropdown-hover: #c8e6c9;
+  --cms-row-odd: #ffffff;
+  --cms-row-even: #f8f9fa;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 16px;
+}
+
+/* ── WRAPPER ── */
+.demo-wrapper {
+  width: 100%;
+  max-width: 760px;
+}
+
+.demo-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.demo-subtitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--dark);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.demo-desc {
+  font-size: 13px;
+  color: var(--mid);
+  text-align: center;
+  margin-bottom: 24px;
+  font-style: italic;
+}
+
+/* ── CMS MOCKUP ── */
+.cms-window {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+}
+
+.cms-topbar {
+  background: var(--cms-header);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cms-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  color: white;
+  letter-spacing: 1px;
+}
+
+.cms-breadcrumb {
+  font-family: 'Inconsolata', monospace;
+  font-size: 10px;
+  color: rgba(255,255,255,0.7);
+  margin-left: auto;
+}
+
+.cms-body {
+  padding: 20px 24px;
+  background: #f8f9fa;
+}
+
+.cms-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+  font-family: Arial, sans-serif;
+}
+
+/* Form row */
+.cms-form-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.cms-label {
+  font-size: 12px;
+  color: #555;
+  font-family: Arial, sans-serif;
+  padding-top: 6px;
+  padding-right: 8px;
+  text-align: right;
+}
+
+.cms-label.required { color: var(--cms-label-red); font-weight: 600; }
+
+.cms-input-wrap { position: relative; }
+
+.cms-input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--cms-input-border);
+  border-radius: 3px;
+  font-size: 12px;
+  font-family: Arial, sans-serif;
+  background: white;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.cms-input.active { border-color: #80bdff; box-shadow: 0 0 0 2px rgba(0,123,255,0.15); }
+.cms-input.typing { border-color: var(--cms-label-red); }
+
+/* Cursor blink */
+.cursor {
+  display: inline-block;
+  width: 1px;
+  height: 13px;
+  background: #333;
+  vertical-align: text-bottom;
+  animation: blink 0.8s step-end infinite;
+  margin-left: 1px;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* DROPDOWN */
+.cms-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #aaa;
+  border-top: none;
+  z-index: 100;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: none;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+.cms-dropdown.visible { display: block; }
+
+.dropdown-header {
+  background: var(--cms-dropdown-green);
+  color: white;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Inconsolata', monospace;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+}
+
+.dropdown-row {
+  padding: 5px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  color: #333;
+  transition: background 0.1s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-row:nth-child(even) { background: var(--cms-row-even); }
+.dropdown-row.highlighted { background: #fff3cd !important; font-weight: 600; }
+.dropdown-row:hover { background: var(--cms-dropdown-hover) !important; }
+
+/* ── STEP INDICATOR ── */
+.step-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0 12px;
+  flex-wrap: wrap;
+}
+
+.step-pill {
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  background: white;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.step-pill.active {
+  background: var(--red);
+  border-color: var(--red);
+  color: white;
+  font-weight: 600;
+}
+
+.step-pill.done {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
+}
+
+/* ── ANNOTATION ── */
+.annotation {
+  background: #1a1208;
+  color: white;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 14px;
+  min-height: 44px;
+  transition: opacity 0.3s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.annotation .highlight { color: #fbbf24; font-weight: 600; }
+.annotation .key {
+  display: inline-block;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-family: 'Inconsolata', monospace;
+  font-size: 13px;
+  margin: 0 2px;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.ctrl-btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.ctrl-play {
+  background: var(--red);
+  color: white;
+  min-width: 120px;
+}
+
+.ctrl-play:hover { background: #8b0a14; transform: translateY(-1px); }
+
+.ctrl-restart {
+  background: white;
+  color: var(--dark);
+  border: 2px solid var(--border);
+}
+
+.ctrl-restart:hover { border-color: var(--dark); }
+
+.speed-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'Inconsolata', monospace;
+}
+
+.speed-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: white;
+  cursor: pointer;
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px;
+  color: var(--mid);
+  transition: all 0.15s;
+}
+
+.speed-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
+
+/* Progress bar */
+.progress-wrap {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-track {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--red);
+  border-radius: 100px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-label {
+  font-family: 'Inconsolata', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+</style>
+</head>
+<body>
+
+<div class="demo-wrapper">
+
+  <div class="demo-title">CMS Walkthrough Demo</div>
+  <div class="demo-subtitle">Αναζήτηση Πελάτη — Client/Acc No.</div>
+  <div class="demo-desc">Πώς λειτουργεί η αναζήτηση με τελεία (.) και γράμματα</div>
+
+  <!-- Step indicator -->
+  <div class="step-bar" id="stepBar">
+    <div class="step-pill active" id="sp1">1 · Κλικ στο πεδίο</div>
+    <div class="step-pill" id="sp2">2 · Πληκτρολόγηση "."</div>
+    <div class="step-pill" id="sp3">3 · Εμφάνιση λίστας</div>
+    <div class="step-pill" id="sp4">4 · Αναζήτηση "SWA"</div>
+    <div class="step-pill" id="sp5">5 · Επιλογή πελάτη</div>
+    <div class="step-pill" id="sp6">6 · Αυτόματη συμπλήρωση</div>
+  </div>
+
+  <!-- CMS Mockup -->
+  <div class="cms-window">
+    <div class="cms-topbar">
+      <div class="cms-logo">4A WORLDWIDE EXPRESS</div>
+      <div class="cms-breadcrumb">Dashboard / Master / Pickup Request/Order</div>
+    </div>
+    <div class="cms-body">
+      <div class="cms-section-title">Consignor</div>
+
+      <div class="cms-form-row">
+        <div class="cms-label required">Client/Acc No *</div>
+        <div class="cms-input-wrap" id="inputWrap">
+          <input class="cms-input" id="clientInput" type="text" placeholder="Client/Acc. No." readonly>
+          <div class="cms-dropdown" id="clientDropdown">
+            <div class="dropdown-header" id="dropdownHeader">● Επέλεξε πελάτη</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cms-form-row">
+        <div class="cms-label required">Consignor *</div>
+        <div class="cms-input-wrap">
+          <input class="cms-input" id="consignorInput" type="text" placeholder="Consignor" readonly>
+        </div>
+      </div>
+
+      <div class="cms-form-row">
+        <div class="cms-label">Address Line 1</div>
+        <div class="cms-input-wrap">
+          <input class="cms-input" id="addressInput" type="text" placeholder="Enter consignor address" readonly>
+        </div>
+      </div>
+
+      <div class="cms-form-row">
+        <div class="cms-label required">Mobile No. *</div>
+        <div class="cms-input-wrap">
+          <input class="cms-input" id="mobileInput" type="text" placeholder="Mobile No." readonly>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Annotation -->
+  <div class="annotation" id="annotation">
+    Πάτα <span class="highlight">▶ Έναρξη</span> για να δεις τη διαδικασία αναζήτησης πελάτη βήμα-βήμα.
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">0 / 6</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="ctrl-btn ctrl-restart" onclick="resetDemo()">↺ Επανεκκίνηση</button>
+    <button class="ctrl-btn ctrl-play" id="playBtn" onclick="togglePlay()">▶ Έναρξη</button>
+    <div class="speed-wrap">
+      Ταχύτητα:
+      <button class="speed-btn active" id="spd1" onclick="setSpeed(1)">1×</button>
+      <button class="speed-btn" id="spd2" onclick="setSpeed(1.5)">1.5×</button>
+      <button class="speed-btn" id="spd3" onclick="setSpeed(2)">2×</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const clients = [
+  { code: 'ACCOUNT RESTART 86', name: 'ACC. REST.' },
+  { code: 'BANK COMMISSION', name: 'BAN.COM.' },
+  { code: 'ERA EXCLUSIVE LTD', name: 'ERA EXCL - 30001520' },
+  { code: 'SWATCH GROUP GREECE MONOPROSOPI SA', name: 'SWA - 094252319 : 30001664' },
+  { code: 'COSMOTE SA', name: 'COS - 094012345 : 30002100' },
+  { code: 'ALPHA BANK SA', name: 'ALP - 094055555 : 30001800' },
+  { code: 'BETA LOGISTICS LTD', name: 'BET - 094077777 : 30001900' },
+  { code: 'GAMMA IMPORT EXPORT', name: 'GAM - 094088888 : 30002000' },
+];
+
+const filteredSwatch = [
+  { code: 'SWATCH GROUP GREECE MONOPROSOPI SA', name: 'SWA - 094252319 : 30001664' },
+];
+
+let speedMult = 1;
+let isPlaying = false;
+let currentStep = 0;
+let animTimeout = null;
+
+function setSpeed(s) {
+  speedMult = s;
+  document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('spd' + (s === 1 ? 1 : s === 1.5 ? 2 : 3)).classList.add('active');
+}
+
+function delay(ms) {
+  return new Promise(res => { animTimeout = setTimeout(res, ms / speedMult); });
+}
+
+function setAnnotation(html) {
+  document.getElementById('annotation').innerHTML = html;
+}
+
+function setStep(n) {
+  currentStep = n;
+  for (let i = 1; i <= 6; i++) {
+    const el = document.getElementById('sp' + i);
+    el.className = 'step-pill' + (i < n ? ' done' : i === n ? ' active' : '');
+  }
+  document.getElementById('progressFill').style.width = ((n-1)/6*100) + '%';
+  document.getElementById('progressLabel').textContent = (n-1) + ' / 6';
+}
+
+function buildDropdown(rows, highlight) {
+  const dd = document.getElementById('clientDropdown');
+  const header = document.getElementById('dropdownHeader');
+  header.textContent = `● ${rows.length} πελάτες βρέθηκαν`;
+  // Remove old rows
+  Array.from(dd.querySelectorAll('.dropdown-row')).forEach(r => r.remove());
+  rows.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'dropdown-row' + (highlight && r.code.includes(highlight) ? ' highlighted' : '');
+    div.textContent = r.code + ' : ' + r.name;
+    dd.appendChild(div);
+  });
+}
+
+async function runDemo() {
+  const inp = document.getElementById('clientInput');
+  const dd = document.getElementById('clientDropdown');
+  const consignor = document.getElementById('consignorInput');
+  const address = document.getElementById('addressInput');
+  const mobile = document.getElementById('mobileInput');
+
+  // STEP 1 — Focus
+  setStep(1);
+  setAnnotation('Βήμα 1: Κάνουμε <span class="highlight">κλικ</span> στο πεδίο <span class="key">Client/Acc No *</span> για να το ενεργοποιήσουμε.');
+  inp.classList.add('active');
+  await delay(1400);
+
+  // STEP 2 — Type dot
+  setStep(2);
+  setAnnotation('Βήμα 2: Πληκτρολογούμε <span class="key">.</span> (τελεία) — αυτό ενεργοποιεί αναζήτηση για <span class="highlight">όλους τους πελάτες</span>.');
+  inp.classList.remove('active');
+  inp.classList.add('typing');
+  inp.value = '.';
+  await delay(900);
+
+  // STEP 3 — Show all clients
+  setStep(3);
+  setAnnotation('Βήμα 3: Εμφανίζεται η <span class="highlight">πλήρης λίστα πελατών</span>. Μπορείς να σκρολάρεις ή να πληκτρολογήσεις για φιλτράρισμα.');
+  buildDropdown(clients, null);
+  dd.classList.add('visible');
+  await delay(1800);
+
+  // STEP 4 — Type SWA
+  setStep(4);
+  setAnnotation('Βήμα 4: Πληκτρολογούμε <span class="key">SWA</span> — η λίστα <span class="highlight">φιλτράρεται αυτόματα</span> σε real-time.');
+
+  inp.value = 'S';
+  await delay(300);
+  inp.value = 'SW';
+  await delay(300);
+  inp.value = 'SWA';
+  await delay(500);
+
+  buildDropdown(filteredSwatch, 'SWATCH');
+  await delay(1200);
+
+  // STEP 5 — Highlight & select
+  setStep(5);
+  setAnnotation('Βήμα 5: Βρήκαμε τον πελάτη! Κάνουμε <span class="highlight">κλικ</span> στο "SWATCH GROUP GREECE" για να τον επιλέξουμε.');
+  const rows = dd.querySelectorAll('.dropdown-row');
+  if (rows[0]) rows[0].style.background = '#c8e6c9';
+  await delay(1000);
+
+  // STEP 6 — Autofill
+  setStep(6);
+  dd.classList.remove('visible');
+  inp.classList.remove('typing');
+  inp.value = 'THE SWATCH GROUP GREECE MONOPROSOPI SA - 094252319 : 30001664';
+  inp.style.color = '#cc1020';
+  inp.style.fontWeight = '600';
+
+  setAnnotation('Βήμα 6: ✅ <span class="highlight">Αυτόματη συμπλήρωση!</span> Τα στοιχεία του πελάτη φορτώνουν αυτόματα σε όλα τα πεδία.');
+
+  await delay(400);
+  consignor.value = 'ERA EXCLUSIVE LTD';
+  await delay(300);
+  address.value = 'POSEIDONOS AV. PAPHINA';
+  await delay(300);
+  mobile.value = '35726937233';
+
+  [consignor, address, mobile].forEach(f => {
+    f.style.background = '#f0fdf4';
+    f.style.borderColor = '#86efac';
+  });
+
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressLabel').textContent = '6 / 6';
+
+  await delay(600);
+  setAnnotation('🎉 <span class="highlight">Ολοκληρώθηκε!</span> Με 3 γράμματα βρήκαμε τον πελάτη και συμπληρώθηκαν αυτόματα όλα τα στοιχεία. Πάτα <span class="key">↺ Επανεκκίνηση</span> για να το ξαναδείς.');
+
+  document.getElementById('playBtn').textContent = '✓ Ολοκληρώθηκε';
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('playBtn').style.background = '#15803d';
+  isPlaying = false;
+}
+
+function togglePlay() {
+  if (isPlaying) return;
+  isPlaying = true;
+  document.getElementById('playBtn').textContent = '⏸ Παίζει...';
+  document.getElementById('playBtn').disabled = true;
+  runDemo();
+}
+
+function resetDemo() {
+  if (animTimeout) clearTimeout(animTimeout);
+  isPlaying = false;
+  currentStep = 0;
+
+  const inp = document.getElementById('clientInput');
+  const dd = document.getElementById('clientDropdown');
+  const consignor = document.getElementById('consignorInput');
+  const address = document.getElementById('addressInput');
+  const mobile = document.getElementById('mobileInput');
+
+  inp.value = '';
+  inp.className = 'cms-input';
+  inp.style.color = '';
+  inp.style.fontWeight = '';
+  dd.classList.remove('visible');
+  Array.from(dd.querySelectorAll('.dropdown-row')).forEach(r => r.remove());
+  document.getElementById('dropdownHeader').textContent = '● Επέλεξε πελάτη';
+
+  [consignor, address, mobile].forEach(f => {
+    f.value = '';
+    f.style.background = '';
+    f.style.borderColor = '';
+  });
+
+  for (let i = 1; i <= 6; i++) document.getElementById('sp' + i).className = 'step-pill' + (i === 1 ? ' active' : '');
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressLabel').textContent = '0 / 6';
+
+  const btn = document.getElementById('playBtn');
+  btn.textContent = '▶ Έναρξη';
+  btn.disabled = false;
+  btn.style.background = '';
+
+  setAnnotation('Πάτα <span class="highlight">▶ Έναρξη</span> για να δεις τη διαδικασία αναζήτησης πελάτη βήμα-βήμα.');
+}
+</script>
+</body>
+</html>
