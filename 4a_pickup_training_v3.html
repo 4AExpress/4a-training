@@ -71,7 +71,7 @@ body{font-family:'Lora',Georgia,serif;background:var(--bg);color:var(--dark);min
 
 .steps{counter-reset:step;}
 .step{display:flex;gap:13px;margin-bottom:16px;align-items:flex-start;}
-.step-num{counter-increment:step;width:28px;height:28px;border-radius:50%;background:var(--tag-bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Inconsolata',monospace;font-weight:600;font-size:12px;color:var(--red);flex-shrink:0;margin-top:2px;}
+.step-num{counter-increment:step;width:24px;flex-shrink:0;margin-top:3px;font-family:'Inconsolata',monospace;font-weight:700;font-size:13px;color:var(--red);text-align:right;padding-right:6px;border-right:2px solid var(--border);}
 .step-content h4{font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;margin-bottom:3px;}
 .step-content p{font-size:13px;color:var(--mid);line-height:1.6;}
 
@@ -370,7 +370,8 @@ code{background:#f0ebe4;padding:1px 5px;border-radius:3px;font-family:monospace;
         <div class="step-num"></div>
         <div class="step-content">
           <h4>Consignee (Παραλήπτης) — Υποχρεωτικά πεδία</h4>
-          <p>Όνομα, Διεύθυνση, Χώρα, Πόλη, ZipCode, Mobile No. — είναι υποχρεωτικά (*).</p>
+          <p>Όνομα, Διεύθυνση, Χώρα, Πόλη, ZipCode, Mobile No. — είναι υποχρεωτικά (*).<br>
+          💡 <strong>Tip:</strong> Αν ο παραλήπτης έχει ήδη καταχωρηθεί ως αποστολέας στο σύστημα, πάτα <kbd>.</kbd> (τελεία) στο πεδίο Consignee → εμφανίζονται αυτόματα <strong>όλα τα στοιχεία του</strong>.</p>
         </div>
       </div>
 
@@ -420,37 +421,6 @@ code{background:#f0ebe4;padding:1px 5px;border-radius:3px;font-family:monospace;
       SHIP CARGO (÷3000) δίνει μεγαλύτερο volumetric από AIR (÷5000) για το ίδιο κουτί.</div>
     </div>
 
-    <div class="att-highlight" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#16a34a;margin-top:14px;">
-      <h4 style="color:#15803d;">💡 Κόλπο του 50 — Mental Shortcut (÷5000)</h4>
-      <p>Αν <strong>μία διάσταση είναι 50 cm</strong>, το volumetric weight βρίσκεται αστραπιαία:<br><br>
-      <strong>Πολλαπλασίασε τις 2 άλλες διαστάσεις → αφαίρεσε 2 μηδενικά</strong><br><br>
-      <em>Γιατί λειτουργεί:</em> (50 × Α × Β) ÷ 5000 = (Α × Β) ÷ 100</p>
-    </div>
-
-    <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-top:12px;">
-      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px;color:var(--dark);">📐 Παραδείγματα "Κόλπο του 50"</div>
-      <table class="field-table">
-        <thead><tr><th>Διαστάσεις (cm)</th><th>Υπολογισμός</th><th>Volumetric (kg)</th></tr></thead>
-        <tbody>
-          <tr><td>50 × 40 × 30</td><td>40 × 30 = 1.200 → ÷100</td><td><strong>12 kg</strong></td></tr>
-          <tr><td>50 × 60 × 25</td><td>60 × 25 = 1.500 → ÷100</td><td><strong>15 kg</strong></td></tr>
-          <tr><td>50 × 80 × 20</td><td>80 × 20 = 1.600 → ÷100</td><td><strong>16 kg</strong></td></tr>
-          <tr><td>50 × 50 × 50</td><td>50 × 50 = 2.500 → ÷100</td><td><strong>25 kg</strong></td></tr>
-        </tbody>
-      </table>
-      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:14px;margin-top:12px;">
-        <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#15803d;margin-bottom:8px;">✏️ Άσκηση — Δοκίμασε μόνος σου</div>
-        <p style="font-size:13px;color:var(--mid);line-height:1.8;">
-          Δέμα <strong>50 × 70 × 30 cm</strong>, Mode = AIR (÷5000). Φυσικό βάρος = <strong>18 kg</strong>.<br>
-          Βήμα 1: 70 × 30 = _____ → ÷100 = _____ kg volumetric<br>
-          Βήμα 2: Volumetric _____ vs Φυσικό 18 kg → Χρεώνεις: <strong>_____ kg</strong>
-        </p>
-        <div style="font-family:'Inconsolata',monospace;font-size:11px;color:var(--muted);margin-top:8px;border-top:1px solid #86efac;padding-top:8px;">
-          ▸ Απάντηση: 70×30 = 2.100 → ÷100 = 21 kg volumetric &gt; 18 kg φυσικό → <strong>Χρεώνεις 21 kg</strong>
-        </div>
-      </div>
-    </div>
-
     <div class="alert info" style="margin-top:8px;">
       <span class="alert-icon">ℹ️</span>
       <div>Για Mode = AIR διαθέσιμες υπηρεσίες: <span class="tag">Air Cyprus S1027</span> <span class="tag">Export Express S1003</span> <span class="tag">MP Express Check&Sign S1057</span> <span class="tag">Import Express S1012</span></div>
@@ -467,8 +437,8 @@ code{background:#f0ebe4;padding:1px 5px;border-radius:3px;font-family:monospace;
         <p>Ο <strong>παραλήπτης</strong> πληρώνει κατά την παράδοση. Χωρίς πληρωμή → <strong>δέμα δεν παραδίδεται</strong>. Καμία εξαίρεση.</p>
       </div>
       <div class="cod-card buy">
-        <h4>BUY COD — Προκαταβολή</h4>
-        <p>Ο <strong>αποστολέας προκαταβάλει</strong> το ποσό. Εξασφαλίζει πληρωμή ακόμα κι αν ο παραλήπτης αρνηθεί.</p>
+        <h4>BUY COD — Αγορά με Αντικαταβολή</h4>
+        <p>Χρησιμοποιείται όταν ο παραλήπτης <strong>αγοράζει προϊόν</strong> μέσω PickUp. Τα χρήματα της αγοράς πρέπει να είναι <strong>διαθέσιμα κατά την παραλαβή</strong> του δέματος — εξασφαλίζοντας ότι η πληρωμή είναι εγγυημένη για τον αποστολέα.</p>
       </div>
     </div>
     <div class="alert warning" style="margin-top:13px;">
@@ -608,7 +578,7 @@ code{background:#f0ebe4;padding:1px 5px;border-radius:3px;font-family:monospace;
       <div class="quiz-stats">
         <div class="quiz-stat"><span class="val" id="qAnswered">0</span><span class="lbl">ΑΠΑΝΤΗΘΗΚΑΝ</span></div>
         <div class="quiz-stat"><span class="val" id="qCorrect">0</span><span class="lbl">ΣΩΣΤΑ</span></div>
-        <div class="quiz-stat"><span class="val">16</span><span class="lbl">ΣΥΝΟΛΟ</span></div>
+        <div class="quiz-stat"><span class="val">15</span><span class="lbl">ΣΥΝΟΛΟ</span></div>
       </div>
     </div>
 
@@ -741,7 +711,7 @@ code{background:#f0ebe4;padding:1px 5px;border-radius:3px;font-family:monospace;
         <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Αποστολέας θέλει εξασφάλιση πληρωμής <strong>ακόμα κι αν ο παραλήπτης αρνηθεί</strong>. Ποιος τύπος COD;</div></div>
         <div class="options">
           <button class="option-btn" onclick="answerMCQ(this,false,12)">COD — Cash on Delivery</button>
-          <button class="option-btn" onclick="answerMCQ(this,true,12)">BUY COD — ο αποστολέας προκαταβάλει</button>
+          <button class="option-btn" onclick="answerMCQ(this,true,12)">BUY COD — τα χρήματα αγοράς είναι διαθέσιμα κατά την παραλαβή</button>
           <button class="option-btn" onclick="answerMCQ(this,false,12)">Δεν υπάρχει λύση σε αυτή την περίπτωση</button>
           <button class="option-btn" onclick="answerMCQ(this,false,12)">Paid By = Consignee</button>
         </div>
@@ -780,23 +750,13 @@ code{background:#f0ebe4;padding:1px 5px;border-radius:3px;font-family:monospace;
         <div class="feedback" id="fb15"></div>
       </div>
 
-      <!-- Q16 MEDIUM FILL — Κόλπο του 50 -->
-      <div class="question-card" data-answered="false" data-qid="16" data-level="medium" data-text="Κόλπο του 50 — υπολογισμός volumetric">
-        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Δέμα <strong>50 × 80 × 30 cm</strong>, Mode = AIR (÷5000). Φυσικό βάρος = <strong>20 kg</strong>.<br>Χρησιμοποίησε το "Κόλπο του 50" — τι βάρος χρεώνεις (αριθμός kg);</div></div>
-        <div class="fill-wrap">
-          <input class="fill-input" id="fill16" type="text" placeholder="Αριθμός kg..." maxlength="10">
-          <button class="check-btn" onclick="checkFill(16,['24','24 kg','24kg'])">Έλεγχος</button>
-        </div>
-        <div class="feedback" id="fb16"></div>
-      </div>
-
     </div><!-- /quizQuestions -->
 
     <!-- Score -->
     <div class="score-section" id="scoreSection">
       <div class="score-circle">
         <div class="score-num" id="scoreNum">0</div>
-        <div class="score-denom" id="scoreDenom">/ 16</div>
+        <div class="score-denom" id="scoreDenom">/ 15</div>
       </div>
       <div class="score-title" id="scoreTitle">—</div>
       <div class="score-msg" id="scoreMsg">—</div>
@@ -860,7 +820,7 @@ code{background:#f0ebe4;padding:1px 5px;border-radius:3px;font-family:monospace;
 </main>
 
 <script>
-const TOTAL = 16;
+const TOTAL = 15;
 const ADMIN_PASSWORD = '4aexpress2024';
 let correctCount = 0, answeredCount = 0, currentExaminer = '';
 let wrongQuestions = [];
@@ -877,7 +837,7 @@ const feedbacks = {
   9:{c:'✅ Σωστά! RO = SURFACE = Οδική μεταφορά.',w:'❌ Λάθος. Οδική μεταφορά (Surface) = κωδικός "RO".'},
   10:{c:'✅ Σωστά! Πάντα ξεκινάς από την αναζήτηση πελάτη στο Client/Acc No.',w:'❌ Λάθος. Πρώτη ενέργεια = Client/Acc No. για να φορτωθούν αυτόματα τα στοιχεία.'},
   11:{c:"✅ Σωστά! Η θέση του πελάτη δεν έχει σημασία — σημασία έχει ότι δεν έχουμε το δέμα. Άρα PickUp.",w:"❌ Λάθος. PickUp ή Booking εξαρτάται από το αν έχουμε το δέμα στα χέρια μας — όχι πού βρίσκεται ο πελάτης."},
-  12:{c:"✅ Σωστά! BUY COD = ο αποστολέας πληρώνει εκ των προτέρων — εξασφάλιση πληρωμής.",w:"❌ Λάθος. BUY COD = ο αποστολέας προκαταβάλει για εξασφάλιση."},
+  12:{c:"✅ Σωστά! BUY COD = αγορά προϊόντος με αντικαταβολή — τα χρήματα αγοράς είναι διαθέσιμα και εγγυημένα κατά την παραλαβή.",w:"❌ Λάθος. BUY COD χρησιμοποιείται όταν ο παραλήπτης αγοράζει προϊόν — τα χρήματα πρέπει να είναι διαθέσιμα κατά την παράδοση."},
   13:{c:"✅ Σωστά! Μικρότερος divisor (3000) = μεγαλύτερο αποτέλεσμα = SHIP CARGO τιμωρεί πιο πολύ τον όγκο.",w:"❌ Λάθος. 3000 < 5000 άρα SHIP CARGO δίνει μεγαλύτερο volumetric weight για το ίδιο κουτί."},
   14:{c:"✅ Σωστά! COD = καμία παράδοση χωρίς είσπραξη. Ο οδηγός επιστρέφει το δέμα.",w:"❌ Λάθος. Χωρίς είσπραξη = δεν παραδίδεται. Ο οδηγός φέρει οικονομική ευθύνη."},
   15:{c:"✅ Σωστά! 60×50×40 = 120.000 ÷ 3.000 = 40 kg volumetric. 40 > 15 άρα χρεώνεις 40 kg.",w:"❌ Λάθος. 60×50×40 = 120.000 ÷ 3.000 = 40 kg volumetric > 15 kg φυσικό → χρεώνεις 40 kg."},
