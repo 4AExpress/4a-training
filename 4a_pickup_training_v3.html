@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4A Express — Εκπαίδευση PickUp Module v3</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inconsolata:wght@400;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
+:root {
+  --red:#cc1020;--red-dark:#8b0a14;--bg:#f5f3ef;--white:#fff;
+  --dark:#1a1208;--mid:#4a3f35;--muted:#9e8e80;--border:#ddd5c8;
+  --success:#1a7a4a;--error:#cc1020;--warning:#d97706;--card:#fff;--tag-bg:#f0ebe4;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Lora',Georgia,serif;background:var(--bg);color:var(--dark);min-height:100vh;}
+
+.site-header{background:var(--red);position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,.25);}
+.header-inner{max-width:980px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:white;letter-spacing:2px;}
+.logo span{opacity:.7;font-weight:400;font-size:10px;display:block;letter-spacing:1px;}
+.progress-bar-wrap{flex:1;max-width:240px;}
+.progress-label{font-family:'Inconsolata',monospace;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;display:flex;justify-content:space-between;}
+.progress-track{background:rgba(255,255,255,.2);border-radius:100px;height:5px;overflow:hidden;}
+.progress-fill{height:100%;background:white;border-radius:100px;transition:width .5s ease;width:0%;}
+.nav-tabs{display:flex;gap:3px;}
+.nav-tab{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;padding:6px 11px;border-radius:6px;border:none;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.7);background:transparent;}
+.nav-tab.active,.nav-tab:hover{background:rgba(255,255,255,.2);color:white;}
+
+.main{max-width:980px;margin:0 auto;padding:36px 22px 80px;}
+.section{display:none;}
+.section.active{display:block;animation:fadeIn .4s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* NAME GATE */
+.name-gate{min-height:60vh;display:flex;align-items:center;justify-content:center;}
+.name-box{background:white;border:1px solid var(--border);border-radius:20px;padding:44px 36px;max-width:420px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.08);}
+.name-box .gate-icon{font-size:48px;margin-bottom:14px;}
+.name-box h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:7px;}
+.name-box p{font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:22px;font-style:italic;}
+.name-input{width:100%;padding:13px 16px;border:2px solid var(--border);border-radius:10px;font-family:'Lora',serif;font-size:15px;color:var(--dark);outline:none;transition:border-color .2s;margin-bottom:6px;text-align:center;}
+.name-input:focus{border-color:var(--red);}
+.name-input.error{border-color:var(--error);background:#fff5f5;}
+.name-error{font-size:11px;color:var(--error);margin-bottom:14px;min-height:16px;font-family:'Inconsolata',monospace;}
+.start-btn{width:100%;padding:15px;background:var(--red);color:white;border:none;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;transition:all .2s;}
+.start-btn:hover{background:var(--red-dark);transform:translateY(-1px);}
+
+/* HERO */
+.hero{background:var(--red);border-radius:16px;padding:40px 34px;color:white;margin-bottom:26px;position:relative;overflow:hidden;}
+.hero::before{content:'PICKUP';position:absolute;right:-15px;top:-8px;font-family:'Syne',sans-serif;font-size:100px;font-weight:800;opacity:.07;letter-spacing:-3px;line-height:1;}
+.hero-badge{font-family:'Inconsolata',monospace;font-size:10px;letter-spacing:2px;background:rgba(255,255,255,.15);padding:3px 11px;border-radius:100px;display:inline-block;margin-bottom:12px;}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(24px,5vw,38px);font-weight:800;line-height:1.1;margin-bottom:9px;}
+.hero p{font-size:14px;opacity:.85;line-height:1.6;max-width:500px;font-style:italic;}
+.hero-meta{display:flex;gap:16px;margin-top:18px;flex-wrap:wrap;}
+.hero-stat{font-family:'Inconsolata',monospace;font-size:11px;opacity:.8;display:flex;align-items:center;gap:5px;}
+.hero-stat::before{content:'▸';opacity:.6;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px 28px;margin-bottom:16px;}
+.card-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--dark);margin-bottom:13px;display:flex;align-items:center;gap:9px;}
+.card-title .num{background:var(--red);color:white;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+
+.def-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:8px;}
+@media(max-width:580px){.def-grid{grid-template-columns:1fr}}
+.def-box{border-radius:10px;padding:16px;border-left:4px solid;}
+.def-box.pickup{background:#fff5f5;border-color:var(--red);}
+.def-box.booking{background:#f0f9ff;border-color:#2563eb;}
+.def-box h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:6px;}
+.def-box.pickup h3{color:var(--red);}
+.def-box.booking h3{color:#2563eb;}
+.def-box p{font-size:12.5px;line-height:1.6;color:var(--mid);}
+
+.steps{counter-reset:step;}
+.step{display:flex;gap:13px;margin-bottom:16px;align-items:flex-start;}
+.step-num{counter-increment:step;width:24px;flex-shrink:0;margin-top:3px;font-family:'Inconsolata',monospace;font-weight:700;font-size:13px;color:var(--red);text-align:right;padding-right:6px;border-right:2px solid var(--border);}
+.step-content h4{font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;margin-bottom:3px;}
+.step-content p{font-size:13px;color:var(--mid);line-height:1.6;}
+
+.field-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px;}
+.field-table th{font-family:'Inconsolata',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:2px solid var(--border);}
+.field-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+.field-table tr:last-child td{border-bottom:none;}
+.field-table tr:hover td{background:#faf8f5;}
+.req{color:var(--red);font-weight:600;font-size:10px;}
+.req-pro{color:var(--warning);font-weight:600;font-size:10px;}
+.opt{color:var(--muted);font-size:10px;}
+.tag{display:inline-block;font-family:'Inconsolata',monospace;font-size:10px;padding:2px 7px;border-radius:4px;background:var(--tag-bg);color:var(--mid);border:1px solid var(--border);}
+
+.mode-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px;}
+.mode-card{background:var(--tag-bg);border:1px solid var(--border);border-radius:8px;padding:11px;text-align:center;}
+.mode-code{font-family:'Inconsolata',monospace;font-size:10px;font-weight:600;color:var(--muted);display:block;letter-spacing:1px;margin-bottom:3px;}
+.mode-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--red);line-height:1.2;}
+.mode-sub{font-size:11px;color:var(--mid);margin-top:2px;line-height:1.3;}
+.mode-div{font-family:'Inconsolata',monospace;font-size:9px;color:var(--muted);margin-top:5px;}
+
+.alert{border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.6;margin-top:11px;display:flex;gap:8px;align-items:flex-start;}
+.alert.warning{background:#fffbeb;border:1px solid #fcd34d;color:#92400e;}
+.alert.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;}
+.alert.success{background:#f0fdf4;border:1px solid #86efac;color:#14532d;}
+.alert.orange{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;}
+.alert-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+
+.cod-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:8px;}
+@media(max-width:480px){.cod-grid{grid-template-columns:1fr}}
+.cod-card{border-radius:8px;padding:14px;border:1px solid;}
+.cod-card.standard{background:#fff7ed;border-color:#fed7aa;}
+.cod-card.buy{background:#fdf4ff;border-color:#e9d5ff;}
+.cod-card h4{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:5px;}
+.cod-card.standard h4{color:#c2410c;}
+.cod-card.buy h4{color:#7c3aed;}
+.cod-card p{font-size:12px;line-height:1.5;color:var(--mid);}
+
+.formula-box{background:var(--dark);color:white;border-radius:9px;padding:16px 20px;font-family:'Inconsolata',monospace;font-size:14px;text-align:center;margin:11px 0;letter-spacing:1px;}
+.formula-box .result{color:#fbbf24;font-size:17px;font-weight:600;}
+.divider{height:1px;background:var(--border);margin:22px 0;}
+.section-header{font-family:'Inconsolata',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:13px;display:flex;align-items:center;gap:9px;}
+.section-header::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ATT highlight */
+.att-highlight{background:linear-gradient(135deg,#fffbeb,#fff7ed);border:2px solid var(--warning);border-radius:10px;padding:16px 18px;margin-top:12px;}
+.att-highlight h4{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--warning);margin-bottom:6px;}
+.att-highlight p{font-size:13px;color:var(--mid);line-height:1.6;}
+
+/* QUIZ */
+.quiz-header{background:var(--dark);border-radius:16px;padding:26px;color:white;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:13px;}
+.quiz-header h2{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;}
+.quiz-header p{font-size:12px;opacity:.7;margin-top:3px;font-style:italic;}
+.quiz-stats{display:flex;gap:16px;}
+.quiz-stat .val{font-family:'Inconsolata',monospace;font-size:24px;font-weight:600;color:#fbbf24;display:block;}
+.quiz-stat .lbl{font-size:9px;opacity:.6;letter-spacing:1px;font-family:'Inconsolata',monospace;}
+.examiner-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:7px 13px;font-family:'Inconsolata',monospace;font-size:11px;color:rgba(255,255,255,.9);display:inline-flex;align-items:center;gap:7px;margin-top:9px;}
+.examiner-badge span{color:#fbbf24;font-weight:600;}
+
+.question-card{background:white;border:1px solid var(--border);border-radius:13px;padding:24px;margin-bottom:13px;}
+.q-header{display:flex;gap:10px;align-items:flex-start;margin-bottom:15px;}
+.q-num{font-family:'Inconsolata',monospace;font-size:9px;padding:3px 9px;border-radius:100px;font-weight:600;flex-shrink:0;margin-top:2px;}
+.q-num.basic{background:#dcfce7;color:#15803d;}
+.q-num.medium{background:#fef3c7;color:#b45309;}
+.q-num.hard{background:#fee2e2;color:#b91c1c;}
+.q-text{font-size:14.5px;line-height:1.6;font-weight:500;}
+
+.options{display:flex;flex-direction:column;gap:6px;}
+.option-btn{width:100%;text-align:left;padding:10px 14px;border:2px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-family:'Lora',serif;font-size:13px;color:var(--dark);transition:all .15s;line-height:1.5;}
+.option-btn:hover:not(:disabled){border-color:var(--red);background:#fff5f5;}
+.option-btn.correct{border-color:var(--success)!important;background:#f0fdf4!important;color:#14532d!important;cursor:default;}
+.option-btn.wrong{border-color:var(--error)!important;background:#fff5f5!important;color:#7f1d1d!important;cursor:default;}
+.option-btn.reveal{border-color:var(--success)!important;background:#f0fdf4!important;color:#14532d!important;opacity:.5;cursor:default;}
+.option-btn:disabled{cursor:default;}
+
+.tf-options{display:flex;gap:9px;}
+.tf-btn{flex:1;padding:12px;border:2px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;transition:all .15s;}
+.tf-btn:hover:not(:disabled){border-color:var(--red);background:#fff5f5;}
+.tf-btn.correct{border-color:var(--success)!important;background:#f0fdf4!important;color:var(--success)!important;cursor:default;}
+.tf-btn.wrong{border-color:var(--error)!important;background:#fff5f5!important;color:var(--error)!important;cursor:default;}
+.tf-btn.reveal{border-color:var(--success)!important;background:#f0fdf4!important;color:var(--success)!important;opacity:.5;cursor:default;}
+.tf-btn:disabled{cursor:default;}
+
+.fill-wrap{display:flex;gap:8px;align-items:center;}
+.fill-input{flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:8px;font-family:'Lora',serif;font-size:14px;color:var(--dark);outline:none;transition:border-color .2s;}
+.fill-input:focus{border-color:var(--red);}
+.fill-input.correct{border-color:var(--success)!important;background:#f0fdf4!important;}
+.fill-input.wrong{border-color:var(--error)!important;background:#fff5f5!important;}
+.fill-input:disabled{cursor:default;}
+.check-btn{padding:10px 16px;background:var(--red);color:white;border:none;border-radius:8px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;transition:background .2s;white-space:nowrap;}
+.check-btn:hover:not(:disabled){background:var(--red-dark);}
+.check-btn:disabled{background:var(--muted);cursor:default;}
+
+.feedback{margin-top:10px;padding:10px 12px;border-radius:8px;font-size:12.5px;line-height:1.6;display:none;}
+.feedback.show{display:block;animation:fadeIn .3s ease;}
+.feedback.correct-fb{background:#f0fdf4;border:1px solid #86efac;color:#14532d;}
+.feedback.wrong-fb{background:#fff5f5;border:1px solid #fca5a5;color:#7f1d1d;}
+
+/* SCORE */
+.score-section{display:none;text-align:center;padding:40px 18px;}
+.score-section.show{display:block;animation:fadeIn .5s ease;}
+.score-circle{width:145px;height:145px;border-radius:50%;border:7px solid var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 20px;background:white;box-shadow:0 8px 40px rgba(204,16,32,.15);}
+.score-num{font-family:'Syne',sans-serif;font-size:44px;font-weight:800;color:var(--red);line-height:1;}
+.score-denom{font-family:'Inconsolata',monospace;font-size:12px;color:var(--muted);}
+.score-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:6px;}
+.score-msg{font-size:14px;color:var(--mid);font-style:italic;margin-bottom:22px;}
+.score-breakdown{display:flex;justify-content:center;gap:18px;margin-bottom:22px;flex-wrap:wrap;}
+.score-item{text-align:center;padding:13px 16px;background:white;border:1px solid var(--border);border-radius:10px;min-width:85px;}
+.score-item .si-val{font-family:'Inconsolata',monospace;font-size:22px;font-weight:600;display:block;}
+.score-item.correct-s .si-val{color:var(--success);}
+.score-item.wrong-s .si-val{color:var(--error);}
+.score-item.pct-s .si-val{color:var(--warning);}
+.score-item .si-lbl{font-size:9px;color:var(--muted);font-family:'Inconsolata',monospace;margin-top:2px;}
+
+.wrong-analysis{background:white;border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:22px;text-align:left;}
+.wrong-analysis h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:13px;}
+.wrong-item{padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px;line-height:1.5;display:flex;gap:9px;}
+.wrong-item:last-child{border-bottom:none;}
+.wrong-item .wi-q{color:var(--mid);flex:1;}
+.wrong-tag{font-family:'Inconsolata',monospace;font-size:9px;padding:2px 8px;border-radius:100px;flex-shrink:0;margin-top:2px;}
+.wrong-tag.basic{background:#dcfce7;color:#15803d;}
+.wrong-tag.medium{background:#fef3c7;color:#b45309;}
+.wrong-tag.hard{background:#fee2e2;color:#b91c1c;}
+
+.action-btns{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;}
+.retry-btn{padding:12px 26px;background:var(--red);color:white;border:none;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;transition:all .2s;}
+.retry-btn:hover{background:var(--red-dark);transform:translateY(-1px);}
+.study-btn{padding:12px 26px;background:white;color:var(--dark);border:2px solid var(--border);border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;transition:all .2s;}
+.study-btn:hover{border-color:var(--dark);}
+
+/* ADMIN */
+.admin-gate{min-height:40vh;display:flex;align-items:center;justify-content:center;}
+.admin-login-box{background:white;border:1px solid var(--border);border-radius:16px;padding:34px 30px;max-width:360px;width:100%;text-align:center;}
+.admin-login-box h2{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:5px;}
+.admin-login-box p{font-size:12px;color:var(--muted);margin-bottom:18px;}
+.admin-input{width:100%;padding:11px 15px;border:2px solid var(--border);border-radius:8px;font-family:'Lora',serif;font-size:14px;outline:none;margin-bottom:9px;transition:border-color .2s;text-align:center;}
+.admin-input:focus{border-color:var(--red);}
+.admin-btn{width:100%;padding:12px;background:var(--dark);color:white;border:none;border-radius:8px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;transition:background .2s;}
+.admin-btn:hover{background:var(--red);}
+.admin-error{font-size:11px;color:var(--error);font-family:'Inconsolata',monospace;min-height:16px;margin-bottom:7px;}
+
+.admin-dashboard{display:none;}
+.admin-dashboard.show{display:block;}
+.admin-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:11px;}
+.admin-topbar h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
+.clear-btn{padding:7px 14px;background:white;color:var(--error);border:2px solid var(--error);border-radius:8px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;transition:all .2s;}
+.clear-btn:hover{background:var(--error);color:white;}
+
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:11px;margin-bottom:22px;}
+.stat-card{background:white;border:1px solid var(--border);border-radius:10px;padding:15px;text-align:center;}
+.stat-card .sc-val{font-family:'Inconsolata',monospace;font-size:26px;font-weight:600;display:block;}
+.stat-card .sc-lbl{font-size:10px;color:var(--muted);font-family:'Inconsolata',monospace;margin-top:2px;}
+.stat-card.blue .sc-val{color:#2563eb;}
+.stat-card.green .sc-val{color:var(--success);}
+.stat-card.red .sc-val{color:var(--error);}
+.stat-card.yellow .sc-val{color:var(--warning);}
+
+.results-table{width:100%;border-collapse:collapse;font-size:12.5px;background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.results-table th{font-family:'Inconsolata',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:9px 13px;text-align:left;border-bottom:2px solid var(--border);background:var(--tag-bg);}
+.results-table td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:top;}
+.results-table tr:last-child td{border-bottom:none;}
+.results-table tr:hover td{background:#faf8f5;}
+.pct-badge{display:inline-block;font-family:'Inconsolata',monospace;font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;}
+.pct-high{background:#dcfce7;color:#15803d;}
+.pct-mid{background:#fef3c7;color:#b45309;}
+.pct-low{background:#fee2e2;color:#b91c1c;}
+
+.weakness-section{background:white;border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-top:18px;}
+.weakness-section h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:15px;}
+.weakness-bar{display:flex;align-items:center;gap:9px;margin-bottom:9px;font-size:11px;}
+.wb-label{width:190px;flex-shrink:0;color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.wb-track{flex:1;background:var(--tag-bg);border-radius:100px;height:9px;overflow:hidden;}
+.wb-fill{height:100%;border-radius:100px;background:var(--red);transition:width .8s ease;}
+.wb-pct{font-family:'Inconsolata',monospace;font-size:10px;color:var(--muted);width:34px;text-align:right;flex-shrink:0;}
+.empty-state{text-align:center;padding:44px;color:var(--muted);font-style:italic;font-size:13px;}
+kbd{background:#f0ebe4;padding:1px 5px;border-radius:3px;border:1px solid #ccc;font-family:monospace;font-size:12px;}
+code{background:#f0ebe4;padding:1px 5px;border-radius:3px;font-family:monospace;font-size:12px;}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo">4A EXPRESS <span>CMS Training Platform v3</span></div>
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span id="progressLabel">Εκπαίδευση</span><span id="progressPct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showSection('training',this)">📖 Υλικό</button>
+      <button class="nav-tab" onclick="goToQuiz(this)">✏️ Αξιολόγηση</button>
+      <button class="nav-tab" onclick="showSection('admin',this)">🔐 Admin</button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+<!-- ═══════════════ TRAINING ═══════════════ -->
+<div class="section active" id="training">
+  <div class="hero">
+    <div class="hero-badge">MODULE 01 · PICKUP</div>
+    <h1>PickUp Module<br>Εκπαιδευτικός Οδηγός</h1>
+    <p>Πλήρης οδηγός καταχώρησης αιτήματος παραλαβής στο cms.4aexpress.com</p>
+    <div class="hero-meta">
+      <span class="hero-stat">6 ενότητες</span>
+      <span class="hero-stat">Βήμα-βήμα</span>
+      <span class="hero-stat">GR / EN / ES</span>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 1 -->
+  <div class="section-header">Ενότητα 1 — Ορισμοί</div>
+  <div class="card">
+    <div class="card-title"><span class="num">1</span>PickUp vs Booking — Η κρίσιμη διαφορά</div>
+    <div class="def-grid">
+      <div class="def-box pickup">
+        <h3>📦 PickUp — Παραλαβή / Collection / Recogida</h3>
+        <p>Το δέμα <strong>δεν βρίσκεται στα χέρια μας</strong>. Ο πελάτης (ή εμείς) καταχωρεί αίτημα και στέλνουμε οδηγό ή αντιπρόσωπο να παραλάβει από τον χώρο του.</p>
+      </div>
+      <div class="def-box booking">
+        <h3>🏢 Booking — Κατάθεση / Drop-off / Entrega en oficina</h3>
+        <p>Το δέμα είναι <strong>φυσικά μπροστά μας</strong>. Ο πελάτης το φέρνει στο γραφείο — ζυγίζουμε, ογκομετρούμε, εκδίδουμε τιμή επί τόπου.</p>
+      </div>
+    </div>
+    <div class="alert warning" style="margin-top:14px;">
+      <span class="alert-icon">⚠️</span>
+      <div><strong>Παγίδα:</strong> Η διαφορά PickUp/Booking ΔΕΝ εξαρτάται από το πού βρίσκεται ο πελάτης που παραγγέλνει — εξαρτάται από το <strong>αν έχουμε το δέμα στα χέρια μας ή όχι</strong>.<br>
+      <em>Παράδειγμα: Πελάτης στην Ελλάδα παραγγέλνει παραλαβή από Κύπρο → <strong>PickUp</strong>, γιατί δεν έχουμε το δέμα.</em></div>
+    </div>
+    <div class="alert info" style="margin-top:10px;">
+      <span class="alert-icon">ℹ️</span>
+      <div>Και οι δύο τύποι παράγουν αυτόματα: <strong>AWB Number</strong> (κωδικός αποστολής) + <strong>Pick Order Number</strong> (αριθμός εντολής παραλαβής).</div>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 2 -->
+  <div class="section-header">Ενότητα 2 — Ποιος Καταχωρεί</div>
+  <div class="card">
+    <div class="card-title"><span class="num">2</span>Δύο τρόποι καταχώρησης PickUp</div>
+    <div class="def-grid">
+      <div class="def-box pickup">
+        <h3>🌐 Web Πελάτης</h3>
+        <p>Ο πελάτης συνδέεται στο portal της 4A Express και υποβάλλει μόνος του <strong>αίτημα παραλαβής (pickup)</strong> online.</p>
+      </div>
+      <div class="def-box booking">
+        <h3>👤 Υπάλληλος Γραφείου</h3>
+        <p>Ο πελάτης τηλεφωνεί ή επικοινωνεί με το γραφείο και <strong>εμείς καταχωρούμε</strong> το PickUp για λογαριασμό του.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 3 -->
+  <div class="section-header">Ενότητα 3 — Βήμα-βήμα Διαδικασία</div>
+  <div class="card">
+    <div class="card-title"><span class="num">3</span>Πώς καταχωρείς Pickup Request/Order</div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <h4>Μεταβαίνεις: PickUp → Pickup Request/Order</h4>
+          <p>Από το αριστερό menu: <code>PickUp → Pickup Request/Order</code></p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <h4>AWB No. & Pick Order No. — Αυτόματα</h4>
+          <p>Και τα δύο παράγονται αυτόματα από το σύστημα (System Generated). <strong>Δεν συμπληρώνονται χειροκίνητα.</strong></p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <h4>Pickup Date — Προσοχή στους κανόνες</h4>
+          <p>Συμπληρώνεται αυτόματα με τη σημερινή ημερομηνία αλλά <strong>μπορεί να αλλάξει για μελλοντική ημερομηνία</strong>. ⚠️ <strong>Δεν επιτρέπεται παρελθοντική ημερομηνία</strong> — ούτε μια μέρα πίσω.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <h4>Client/Acc No. — 3 τρόποι αναζήτησης</h4>
+          <p>
+            <kbd>.</kbd> (τελεία) → εμφανίζει <strong>όλους</strong> τους πελάτες<br>
+            <kbd>3+ γράμματα</kbd> → φιλτράρει σε real-time (4 γράμματα = πιο στενή λίστα κ.ο.κ.)<br>
+            <kbd>ΑΦΜ</kbd> → αν έχει καταχωρηθεί στο Master του πελάτη<br><br>
+            Μόλις επιλεγεί ο σωστός πελάτης, τα στοιχεία φορτώνουν <strong>αυτόματα</strong>.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <h4>Consignee (Παραλήπτης) — Υποχρεωτικά πεδία</h4>
+          <p>Όνομα, Διεύθυνση, Χώρα, Πόλη, ZipCode, Mobile No. — είναι υποχρεωτικά (*).<br>
+          💡 <strong>Tip:</strong> Αν ο παραλήπτης έχει ήδη καταχωρηθεί ως αποστολέας στο σύστημα, πάτα <kbd>.</kbd> (τελεία) στο πεδίο Consignee → εμφανίζονται αυτόματα <strong>όλα τα στοιχεία του</strong>.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <h4>Mode & Service</h4>
+          <p>Επέλεξε Mode (τρόπος μεταφοράς). Το Service εμφανίζεται αυτόματα ανάλογα με το Mode.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <h4>Submit → AWB + Pick Order παράγονται</h4>
+          <p>Πάτα <strong>Submit</strong>. Το σύστημα ολοκληρώνει την καταχώρηση και δημιουργεί αυτόματα τους αριθμούς.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ATT highlight -->
+    <div class="att-highlight">
+      <h4>⚠️ Attention (ATT) — Επαγγελματικά Απαραίτητο</h4>
+      <p>Το πεδίο <strong>Attention</strong> είναι ο <strong>υπεύθυνος για αυτή την παραλαβή</strong> μέσα στην εταιρία του πελάτη. Δεν είναι τεχνικά υποχρεωτικό (*) αλλά είναι <strong>επαγγελματικά απαραίτητο</strong>.<br><br>
+      Σκέψου: σε μεγάλη εταιρία, χωρίς Attention πρέπει να ψάχνουμε τμήμα-τμήμα ποιος είναι υπεύθυνος για την αποστολή. Πάντα το συμπληρώνουμε.</p>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 4 -->
+  <div class="section-header">Ενότητα 4 — Τρόποι Μεταφοράς (Modes)</div>
+  <div class="card">
+    <div class="card-title"><span class="num">4</span>5 Τρόποι Μεταφοράς — Mode Master</div>
+    <div class="mode-grid">
+      <div class="mode-card"><span class="mode-code">AR</span><div class="mode-name">AIR</div><div class="mode-sub">Αεροπορικώς</div><div class="mode-div">÷ 5000</div></div>
+      <div class="mode-card"><span class="mode-code">RO</span><div class="mode-name">SURFACE</div><div class="mode-sub">Οδικώς</div><div class="mode-div">÷ 5000</div></div>
+      <div class="mode-card"><span class="mode-code">PTP</span><div class="mode-name">POINT TO POINT</div><div class="mode-sub">Απευθείας</div><div class="mode-div">÷ 5000</div></div>
+      <div class="mode-card"><span class="mode-code">COMBI</span><div class="mode-name">COMBI</div><div class="mode-sub">Αέρας + Οδός</div><div class="mode-div">÷ 5000</div></div>
+      <div class="mode-card"><span class="mode-code">SHIP / SHIPC</span><div class="mode-name">SHIPPING</div><div class="mode-sub">Θαλάσσιο</div><div class="mode-div">÷ 3000 / 5000</div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="card-title" style="font-size:14px;">📐 Volumetric Weight — Βάρος Όγκου</div>
+    <div class="formula-box">(Μήκος × Πλάτος × Ύψος) cm³ ÷ Divisor = <span class="result">Βάρος Όγκου (kg)</span></div>
+    <div class="alert warning">
+      <span class="alert-icon">⚠️</span>
+      <div>Χρεώνεις πάντα το <strong>μεγαλύτερο</strong> από φυσικό βάρος και volumetric weight.<br>
+      SHIP CARGO (÷3000) δίνει μεγαλύτερο volumetric από AIR (÷5000) για το ίδιο κουτί.</div>
+    </div>
+
+    <div class="alert info" style="margin-top:8px;">
+      <span class="alert-icon">ℹ️</span>
+      <div>Για Mode = AIR διαθέσιμες υπηρεσίες: <span class="tag">Air Cyprus S1027</span> <span class="tag">Export Express S1003</span> <span class="tag">MP Express Check&Sign S1057</span> <span class="tag">Import Express S1012</span></div>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 5 -->
+  <div class="section-header">Ενότητα 5 — COD Αντικαταβολή</div>
+  <div class="card">
+    <div class="card-title"><span class="num">5</span>COD — Cash on Delivery / Αντικαταβολή / Contra reembolso</div>
+    <div class="cod-grid">
+      <div class="cod-card standard">
+        <h4>COD — Αντικαταβολή</h4>
+        <p>Ο <strong>παραλήπτης</strong> πληρώνει κατά την παράδοση. Χωρίς πληρωμή → <strong>δέμα δεν παραδίδεται</strong>. Καμία εξαίρεση.</p>
+      </div>
+      <div class="cod-card buy">
+        <h4>BUY COD — Αγορά με Αντικαταβολή</h4>
+        <p>Χρησιμοποιείται όταν ο παραλήπτης <strong>αγοράζει προϊόν</strong> μέσω PickUp. Τα χρήματα της αγοράς πρέπει να είναι <strong>διαθέσιμα κατά την παραλαβή</strong> του δέματος — εξασφαλίζοντας ότι η πληρωμή είναι εγγυημένη για τον αποστολέα.</p>
+      </div>
+    </div>
+    <div class="alert warning" style="margin-top:13px;">
+      <span class="alert-icon">⚠️</span>
+      <div><strong>Οικονομική ευθύνη:</strong> Ο υπάλληλος/οδηγός που παραδίδει δέμα με COD φέρει <strong>πλήρη οικονομική ευθύνη</strong> για την είσπραξη. Παράδοση χωρίς είσπραξη = σοβαρό παράπτωμα.</div>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 6 -->
+  <div class="section-header">Ενότητα 6 — Πλήρης Πίνακας Πεδίων</div>
+  <div class="card">
+    <div class="card-title"><span class="num">6</span>Όλα τα πεδία της φόρμας</div>
+    <table class="field-table">
+      <thead><tr><th>Πεδίο</th><th>Περιγραφή</th><th>Κατάσταση</th></tr></thead>
+      <tbody>
+        <tr><td><strong>AWB No.</strong></td><td>Αυτόματος μοναδικός κωδικός αποστολής</td><td><span class="req">ΑΥΤΟΜΑΤΟ</span></td></tr>
+        <tr><td><strong>Pick Order No.</strong></td><td>Αυτόματος αριθμός εντολής παραλαβής</td><td><span class="req">ΑΥΤΟΜΑΤΟ</span></td></tr>
+        <tr><td><strong>Pickup Date</strong></td><td>Αυτόματο — επεξεργάσιμο μόνο για μέλλον</td><td><span class="req">✅ ΥΠ.</span></td></tr>
+        <tr><td><strong>Client/Acc No.</strong></td><td>Αναζήτηση με "." / γράμματα / ΑΦΜ</td><td><span class="req">✅ ΥΠ.</span></td></tr>
+        <tr><td><strong>Consignor / Country / City / Mobile</strong></td><td>Στοιχεία αποστολέα — αυτόματα αν υπάρχει λογαριασμός</td><td><span class="req">✅ ΥΠ.</span></td></tr>
+        <tr><td><strong>Attention (ATT)</strong></td><td>Υπεύθυνος παραλαβής στην εταιρία πελάτη</td><td><span class="req-pro">⚡ ΕΠΑΓΓ.</span></td></tr>
+        <tr><td><strong>Consignee / ZipCode / Mobile</strong></td><td>Στοιχεία παραλήπτη</td><td><span class="req">✅ ΥΠ.</span></td></tr>
+        <tr><td><strong>Mode / Service</strong></td><td>Τρόπος μεταφοράς & υπηρεσία</td><td><span class="req">✅ ΥΠ.</span></td></tr>
+        <tr><td><strong>Paid By / COD Type / Payment Mode</strong></td><td>Οικονομικά στοιχεία πληρωμής</td><td><span class="req">✅ ΥΠ.</span></td></tr>
+        <tr><td><strong>Freight Value / Delivery Type</strong></td><td>Αξία & τύπος παράδοσης</td><td><span class="req">✅ ΥΠ.</span></td></tr>
+        <tr><td><strong>Extra Charge Details</strong></td><td>Επιπλέον χρεώσεις: Παλετοποίηση, Repacking, Τσέρκια, Dangerous Goods, Insurance, Remote Area, Wrong Address κ.ά.</td><td><span class="opt">❌ ΠΡΟΑΙΡ.</span></td></tr>
+        <tr><td><strong>Pickup Time From/To</strong></td><td>Χρονικό παράθυρο παραλαβής (24h)</td><td><span class="opt">❌ ΠΡΟΑΙΡ.</span></td></tr>
+        <tr><td><strong>Insurance / Approx Pcs & Wt.</strong></td><td>Ασφάλεια & κατά προσέγγιση στοιχεία</td><td><span class="opt">❌ ΠΡΟΑΙΡ.</span></td></tr>
+        <tr><td><strong>IBAN / Swift</strong></td><td>Τραπεζικά στοιχεία για COD</td><td><span class="opt">❌ ΠΡΟΑΙΡ.</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert info" style="margin-top:13px;">
+      <span class="alert-icon">ℹ️</span>
+      <div><strong>Payment Mode:</strong> Δεν είναι απλώς B2B vs B2C.<br>
+      <strong>ACCOUNT</strong> → εταιρικός πελάτης με πίστωση (τιμολόγηση αργότερα)<br>
+      <strong>Μετρητά/Κάρτα</strong> → ιδιώτης Β2C ή πελάτης με κωδικό συνεργασίας που πληρώνει μετρητά<br>
+      ⚠️ Υπάρχουν πελάτες με κωδικό συνεργασίας που ΔΕΝ έχουν ACCOUNT — πάντα επιβεβαίωνε.</div>
+    </div>
+
+    <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-top:12px;">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;color:var(--dark);">📋 Extra Charges — Κατάλογος επιπλέον χρεώσεων</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <span class="tag">PALLETE — Παλετοποίηση</span>
+        <span class="tag">REPACKING — Επανασυσκευή</span>
+        <span class="tag">PLASTIC STRAPS — Τσέρκια</span>
+        <span class="tag">DANGEROUS GOODS — DG</span>
+        <span class="tag">DG RETURN 8 EURO</span>
+        <span class="tag">INSURANCE-VALUE — INSUR</span>
+        <span class="tag">NON STACKABLE PALLET</span>
+        <span class="tag">HANDLING CHARGES</span>
+        <span class="tag">REMOTE AREA 3.5</span>
+        <span class="tag">REMOTE AREA 5 EX&IMP</span>
+        <span class="tag">EXPORT DECLARATION</span>
+        <span class="tag">VAT & DUTIES ON DEST</span>
+        <span class="tag">WRONG ADDRESS 10€</span>
+        <span class="tag">CHANGE OF ADDRESS</span>
+        <span class="tag">CANCEL COD</span>
+        <span class="tag">BANK COMMISSION</span>
+        <span class="tag">TERMINATE CHARGES / OVERWEIGHT</span>
+        <span class="tag">TIME DEFINITE DLVR</span>
+        <span class="tag">DHL ELEVATED RISK 25</span>
+        <span class="tag">PROTOCOL — PRO</span>
+        <span class="tag">OTHER CHARGES — OTH</span>
+        <span class="tag">ACCOUNT RESTART</span>
+        <span class="tag">BATTERIES</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 7 — UPDATE -->
+  <div class="section-header">Ενότητα 7 — Διόρθωση Καταχώρησης (Update)</div>
+  <div class="card">
+    <div class="card-title"><span class="num">7</span>Πώς διορθώνεις μια καταχώρηση PickUp</div>
+    <div class="alert orange">
+      <span class="alert-icon">✏️</span>
+      <div>Αν χρειαστεί να διορθωθεί μια καταχώρηση που έχει ήδη υποβληθεί, <strong>δεν δημιουργείς νέα</strong> — κάνεις <strong>Update</strong> στην υπάρχουσα.</div>
+    </div>
+    <div class="steps" style="margin-top:16px;">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <h4>Επέλεξε mode "Update"</h4>
+          <p>Στην οθόνη Pickup Request/Order, επέλεξε <code>Update</code> από το dropdown δίπλα στον τίτλο (αντί για PickupRequest).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <h4>Εισάγαγε τον AWB αριθμό</h4>
+          <p>Πληκτρολόγησε τον <strong>AWB αριθμό</strong> της αποστολής που θέλεις να διορθώσεις και πάτα <kbd>Enter</kbd>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <h4>Η φόρμα φορτώνει — κάνε τις αλλαγές</h4>
+          <p>Τα στοιχεία της αποστολής εμφανίζονται αυτόματα. Διόρθωσε ό,τι χρειάζεται και πάτα <strong>Submit</strong>.</p>
+        </div>
+      </div>
+    </div>
+    <div class="alert warning" style="margin-top:4px;">
+      <span class="alert-icon">⚠️</span>
+      <div>Το Update <strong>αντικαθιστά</strong> τα στοιχεία — βεβαιώσου ότι όλα τα πεδία είναι σωστά πριν το τελικό Submit.</div>
+    </div>
+  </div>
+
+  <!-- USP -->
+  <div class="section-header">4A Express — Ανταγωνιστικό Πλεονέκτημα</div>
+  <div class="card" style="background:linear-gradient(135deg,#1a1208,#2d1a0a);border:2px solid #f59e0b;">
+    <div class="card-title" style="color:#fbbf24;">🏆 USP — Unique Selling Point</div>
+    <p style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.8;margin-bottom:14px;">
+      Κάθε PickUp που καταχωρείται στο CMS ενημερώνει τον πελάτη <strong style="color:#fbbf24;">real-time</strong> μέσω της Web Client Platform. Η επαναζύγιση και ογκομέτρηση είναι <strong style="color:#fbbf24;">live και διαφανής</strong> — ο πελάτης βλέπει τα πάντα αυτόματα.
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#22c55e;">4A</div>
+        <div style="font-family:'Inconsolata',monospace;font-size:10px;color:#fbbf24;margin-top:3px;">LIVE</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:3px;">Άμεση ενημέρωση</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#f87171;">DHL</div>
+        <div style="font-family:'Inconsolata',monospace;font-size:10px;color:#f87171;margin-top:3px;">+1 ΗΜΕΡΑ</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:3px;">Τηλεφωνικά μόνο</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#f87171;">UPS</div>
+        <div style="font-family:'Inconsolata',monospace;font-size:10px;color:#f87171;margin-top:3px;">+3 ΗΜΕΡΕΣ</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:3px;">Τηλεφωνικά μόνο</div>
+      </div>
+    </div>
+    <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:12px;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.85);line-height:1.7;">
+        ✅ Ο πελάτης <strong style="color:#22c55e;">δεν μπορεί να αρνηθεί</strong> τη χρέωση — έχει ήδη ενημερωθεί real-time.<br>
+        ✅ Αρνήσεις πελατών: <strong style="color:#fbbf24;">1-2 ανά τρίμηνο</strong> — έναντι πολλαπλάσιων στους ανταγωνιστές.
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:28px;">
+    <button class="retry-btn" onclick="goToQuiz(document.querySelectorAll('.nav-tab')[1])">✏️ Πήγαινε στην Αξιολόγηση →</button>
+  </div>
+
+</div>
+
+<!-- ═══════════════ QUIZ ═══════════════ -->
+<div class="section" id="quiz">
+
+  <!-- Name Gate -->
+  <div id="nameGate" class="name-gate">
+    <div class="name-box">
+      <div class="gate-icon">📋</div>
+      <h2>Αξιολόγηση PickUp</h2>
+      <p>Πριν ξεκινήσεις, συμπλήρωσε το πλήρες ονοματεπώνυμό σου. Τα αποτελέσματα καταγράφονται για αξιολόγηση από τον διαχειριστή.</p>
+      <input class="name-input" id="nameInput" type="text" placeholder="Ονοματεπώνυμο..." maxlength="60" autocomplete="off" onkeydown="if(event.key==='Enter')startQuiz()">
+      <div class="name-error" id="nameError"></div>
+      <button class="start-btn" onclick="startQuiz()">Έναρξη Αξιολόγησης →</button>
+    </div>
+  </div>
+
+  <!-- Quiz Content -->
+  <div id="quizContent" style="display:none;">
+    <div class="quiz-header">
+      <div>
+        <h2>Αξιολόγηση — PickUp Module</h2>
+        <p>15 ερωτήσεις · 3 επίπεδα · Οι απαντήσεις είναι οριστικές και δεν αλλάζουν</p>
+        <div class="examiner-badge">👤 Εξεταζόμενος: <span id="examinerName">—</span></div>
+      </div>
+      <div class="quiz-stats">
+        <div class="quiz-stat"><span class="val" id="qAnswered">0</span><span class="lbl">ΑΠΑΝΤΗΘΗΚΑΝ</span></div>
+        <div class="quiz-stat"><span class="val" id="qCorrect">0</span><span class="lbl">ΣΩΣΤΑ</span></div>
+        <div class="quiz-stat"><span class="val">15</span><span class="lbl">ΣΥΝΟΛΟ</span></div>
+      </div>
+    </div>
+
+    <div id="quizQuestions">
+
+      <!-- Q1 BASIC MCQ -->
+      <div class="question-card" data-answered="false" data-qid="1" data-level="basic" data-text="PickUp vs Booking — βασική διαφορά">
+        <div class="q-header"><span class="q-num basic">ΒΑΣΙΚΟ</span><div class="q-text">Ποια είναι η βασική διαφορά μεταξύ <strong>PickUp</strong> και <strong>Booking</strong>;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="answerMCQ(this,false,1)">Και οι δύο απαιτούν φυσική παρουσία του πελάτη στο γραφείο</button>
+          <button class="option-btn" onclick="answerMCQ(this,true,1)">Στο PickUp δεν έχουμε το δέμα — στέλνουμε να παραλάβουμε. Στο Booking το δέμα είναι μπροστά μας</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,1)">Το PickUp είναι μόνο για εταιρικούς πελάτες</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,1)">Το Booking χρησιμοποιείται μόνο για διεθνείς αποστολές</button>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <!-- Q2 BASIC TF -->
+      <div class="question-card" data-answered="false" data-qid="2" data-level="basic" data-text="AWB — αυτόματος ή χειροκίνητος">
+        <div class="q-header"><span class="q-num basic">ΒΑΣΙΚΟ</span><div class="q-text">Σωστό ή Λάθος: Κατά το PickUp, το σύστημα παράγει αυτόματα <strong>τόσο AWB Number όσο και Pick Order Number</strong>.</div></div>
+        <div class="tf-options">
+          <button class="tf-btn" onclick="answerTF(this,true,2)">✓ Σωστό</button>
+          <button class="tf-btn" onclick="answerTF(this,false,2)">✗ Λάθος</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+      </div>
+
+      <!-- Q3 BASIC FILL -->
+      <div class="question-card" data-answered="false" data-qid="3" data-level="basic" data-text="Πλήκτρο για λίστα πελατών">
+        <div class="q-header"><span class="q-num basic">ΒΑΣΙΚΟ</span><div class="q-text">Ποιο σύμβολο πληκτρολογείς στο <strong>Client/Acc No.</strong> για να εμφανιστεί η <em>πλήρης</em> λίστα όλων των πελατών;</div></div>
+        <div class="fill-wrap">
+          <input class="fill-input" id="fill3" type="text" placeholder="Γράψε το σύμβολο..." maxlength="5">
+          <button class="check-btn" onclick="checkFill(3,['.','τελεία'])">Έλεγχος</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+      </div>
+
+      <!-- Q4 BASIC MCQ -->
+      <div class="question-card" data-answered="false" data-qid="4" data-level="basic" data-text="Mode για αέρα + οδό">
+        <div class="q-header"><span class="q-num basic">ΒΑΣΙΚΟ</span><div class="q-text">Ποιο Mode χρησιμοποιείς για αποστολή που ταξιδεύει <strong>αεροπορικώς ΚΑΙ οδικώς</strong>;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="answerMCQ(this,false,4)">AR — AIR</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,4)">PTP — POINTTOPOINT</button>
+          <button class="option-btn" onclick="answerMCQ(this,true,4)">COMBI</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,4)">RO — SURFACE</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+      </div>
+
+      <!-- Q5 BASIC TF -->
+      <div class="question-card" data-answered="false" data-qid="5" data-level="basic" data-text="Pickup Date — παρελθοντική ημερομηνία">
+        <div class="q-header"><span class="q-num basic">ΒΑΣΙΚΟ</span><div class="q-text">Σωστό ή Λάθος: Μπορώ να αλλάξω το Pickup Date σε <strong>χθεσινή ημερομηνία</strong> αν ο πελάτης άργησε να ζητήσει PickUp.</div></div>
+        <div class="tf-options">
+          <button class="tf-btn" onclick="answerTF(this,false,5)">✓ Σωστό</button>
+          <button class="tf-btn" onclick="answerTF(this,true,5)">✗ Λάθος</button>
+        </div>
+        <div class="feedback" id="fb5"></div>
+      </div>
+
+      <!-- Q6 MEDIUM MCQ -->
+      <div class="question-card" data-answered="false" data-qid="6" data-level="medium" data-text="Αναζήτηση πελάτη με ΑΦΜ">
+        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Πελάτης δίνει τηλεφωνικά το <strong>ΑΦΜ</strong> του. Μπορείς να τον βρεις στο Client/Acc No.;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="answerMCQ(this,false,6)">Όχι, ψάχνεις μόνο με κωδικό ή τελεία</button>
+          <button class="option-btn" onclick="answerMCQ(this,true,6)">Ναι, αν το ΑΦΜ είναι καταχωρημένο στο Master του πελάτη</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,6)">Ναι, πάντα — το ΑΦΜ είναι υποχρεωτικό πεδίο</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,6)">Μόνο αν είναι εταιρικός πελάτης</button>
+        </div>
+        <div class="feedback" id="fb6"></div>
+      </div>
+
+      <!-- Q7 MEDIUM TF -->
+      <div class="question-card" data-answered="false" data-qid="7" data-level="medium" data-text="Payment Mode ACCOUNT — τι σημαίνει">
+        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Σωστό ή Λάθος: Payment Mode = <strong>ACCOUNT</strong> σημαίνει εταιρικός πελάτης με πιστωτικό λογαριασμό — δεν πληρώνει επί τόπου.</div></div>
+        <div class="tf-options">
+          <button class="tf-btn" onclick="answerTF(this,true,7)">✓ Σωστό</button>
+          <button class="tf-btn" onclick="answerTF(this,false,7)">✗ Λάθος</button>
+        </div>
+        <div class="feedback" id="fb7"></div>
+      </div>
+
+      <!-- Q8 MEDIUM MCQ -->
+      <div class="question-card" data-answered="false" data-qid="8" data-level="medium" data-text="Volumetric weight — υπολογισμός AIR">
+        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Κουτί <strong>50×40×30 cm</strong>, Mode = AIR (÷5000). Ποιο είναι το volumetric weight;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="answerMCQ(this,false,8)">8 kg</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,8)">10 kg</button>
+          <button class="option-btn" onclick="answerMCQ(this,true,8)">12 kg</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,8)">20 kg</button>
+        </div>
+        <div class="feedback" id="fb8"></div>
+      </div>
+
+      <!-- Q9 MEDIUM FILL -->
+      <div class="question-card" data-answered="false" data-qid="9" data-level="medium" data-text="Κωδικός οδικής μεταφοράς">
+        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Ποιος κωδικός Mode αντιστοιχεί στην <strong>οδική μεταφορά</strong> (Surface);</div></div>
+        <div class="fill-wrap">
+          <input class="fill-input" id="fill9" type="text" placeholder="Κωδικός..." maxlength="10">
+          <button class="check-btn" onclick="checkFill(9,['ro','RO'])">Έλεγχος</button>
+        </div>
+        <div class="feedback" id="fb9"></div>
+      </div>
+
+      <!-- Q10 MEDIUM MCQ -->
+      <div class="question-card" data-answered="false" data-qid="10" data-level="medium" data-text="Πρώτη ενέργεια στη φόρμα PickUp">
+        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Πελάτης τηλεφωνεί για PickUp. Ποια η <strong>πρώτη ενέργεια</strong> στη φόρμα;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="answerMCQ(this,false,10)">Συμπληρώνεις τα στοιχεία Consignee</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,10)">Επιλέγεις Mode και Service</button>
+          <button class="option-btn" onclick="answerMCQ(this,true,10)">Αναζητάς τον πελάτη στο Client/Acc No.</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,10)">Ορίζεις την ημερομηνία παραλαβής</button>
+        </div>
+        <div class="feedback" id="fb10"></div>
+      </div>
+
+      <!-- Q11 HARD MCQ -->
+      <div class="question-card" data-answered="false" data-qid="11" data-level="hard" data-text="PickUp ή Booking — πελάτης Ελλάδα, δέμα Κύπρος">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Πελάτης βρίσκεται στην <strong>Ελλάδα</strong> και θέλει να παραλάβουμε δέμα από <strong>Κύπρο</strong>. Τι καταχωρούμε;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="answerMCQ(this,false,11)">Booking — γιατί ο πελάτης είναι εταιρικός</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,11)">Booking — γιατί είναι διεθνής αποστολή</button>
+          <button class="option-btn" onclick="answerMCQ(this,true,11)">PickUp — γιατί δεν έχουμε το δέμα στα χέρια μας</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,11)">Εξαρτάται από τον τύπο του πελάτη (B2B/B2C)</button>
+        </div>
+        <div class="feedback" id="fb11"></div>
+      </div>
+
+      <!-- Q12 HARD MCQ -->
+      <div class="question-card" data-answered="false" data-qid="12" data-level="hard" data-text="BUY COD — πότε χρησιμοποιείται">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Αποστολέας θέλει εξασφάλιση πληρωμής <strong>ακόμα κι αν ο παραλήπτης αρνηθεί</strong>. Ποιος τύπος COD;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="answerMCQ(this,false,12)">COD — Cash on Delivery</button>
+          <button class="option-btn" onclick="answerMCQ(this,true,12)">BUY COD — τα χρήματα αγοράς είναι διαθέσιμα κατά την παραλαβή</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,12)">Δεν υπάρχει λύση σε αυτή την περίπτωση</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,12)">Paid By = Consignee</button>
+        </div>
+        <div class="feedback" id="fb12"></div>
+      </div>
+
+      <!-- Q13 HARD TF -->
+      <div class="question-card" data-answered="false" data-qid="13" data-level="hard" data-text="SHIP CARGO divisor vs AIR">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Σωστό ή Λάθος: SHIP CARGO (÷3000) υπολογίζει volumetric weight <strong>μεγαλύτερο</strong> από AIR (÷5000) για το ίδιο κουτί.</div></div>
+        <div class="tf-options">
+          <button class="tf-btn" onclick="answerTF(this,true,13)">✓ Σωστό</button>
+          <button class="tf-btn" onclick="answerTF(this,false,13)">✗ Λάθος</button>
+        </div>
+        <div class="feedback" id="fb13"></div>
+      </div>
+
+      <!-- Q14 HARD MCQ -->
+      <div class="question-card" data-answered="false" data-qid="14" data-level="hard" data-text="COD — οδηγός και άρνηση παραλήπτη">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Οδηγός φτάνει με COD δέμα — ο παραλήπτης λέει "θα πληρώσω αύριο". Τι κάνει;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="answerMCQ(this,false,14)">Αφήνει το δέμα και αναφέρει στο γραφείο</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,14)">Κάνει εξαίρεση αν ο παραλήπτης είναι γνωστός πελάτης</button>
+          <button class="option-btn" onclick="answerMCQ(this,true,14)">ΔΕΝ παραδίδει — επιστρέφει το δέμα στο γραφείο</button>
+          <button class="option-btn" onclick="answerMCQ(this,false,14)">Παίρνει μέρος του ποσού και παραδίδει</button>
+        </div>
+        <div class="feedback" id="fb14"></div>
+      </div>
+
+      <!-- Q15 HARD FILL -->
+      <div class="question-card" data-answered="false" data-qid="15" data-level="hard" data-text="Volumetric weight SHIP CARGO — τι χρεώνεις">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Κουτί <strong>60×50×40 cm</strong>, Mode = SHIP CARGO (÷3000). Φυσικό βάρος = 15 kg. Τι βάρος χρεώνεις (αριθμός kg);</div></div>
+        <div class="fill-wrap">
+          <input class="fill-input" id="fill15" type="text" placeholder="Αριθμός kg..." maxlength="10">
+          <button class="check-btn" onclick="checkFill(15,['40','40 kg','40kg'])">Έλεγχος</button>
+        </div>
+        <div class="feedback" id="fb15"></div>
+      </div>
+
+    </div><!-- /quizQuestions -->
+
+    <!-- Score -->
+    <div class="score-section" id="scoreSection">
+      <div class="score-circle">
+        <div class="score-num" id="scoreNum">0</div>
+        <div class="score-denom" id="scoreDenom">/ 15</div>
+      </div>
+      <div class="score-title" id="scoreTitle">—</div>
+      <div class="score-msg" id="scoreMsg">—</div>
+      <div class="score-breakdown">
+        <div class="score-item correct-s"><span class="si-val" id="sbCorrect">0</span><span class="si-lbl">ΣΩΣΤΑ</span></div>
+        <div class="score-item wrong-s"><span class="si-val" id="sbWrong">0</span><span class="si-lbl">ΛΑΘΗ</span></div>
+        <div class="score-item pct-s"><span class="si-val" id="sbPct">0%</span><span class="si-lbl">ΠΟΣΟΣΤΟ</span></div>
+      </div>
+      <div class="wrong-analysis" id="wrongAnalysis" style="display:none;">
+        <h3>❌ Ερωτήσεις που χρειάζονται επανάληψη:</h3>
+        <div id="wrongList"></div>
+      </div>
+      <div class="action-btns">
+        <button class="retry-btn" onclick="resetQuiz()">🔄 Ξαναπροσπάθεια</button>
+        <button class="study-btn" onclick="showSection('training',document.querySelectorAll('.nav-tab')[0])">📖 Επανάληψη Υλικού</button>
+      </div>
+    </div>
+  </div><!-- /quizContent -->
+</div><!-- /quiz -->
+
+<!-- ═══════════════ ADMIN ═══════════════ -->
+<div class="section" id="admin">
+  <div id="adminGate" class="admin-gate">
+    <div class="admin-login-box">
+      <h2>🔐 Admin Panel</h2>
+      <p>Πρόσβαση μόνο για διαχειριστές 4A Express</p>
+      <input class="admin-input" id="adminPass" type="password" placeholder="Κωδικός πρόσβασης..." onkeydown="if(event.key==='Enter')checkAdmin()">
+      <div class="admin-error" id="adminError"></div>
+      <button class="admin-btn" onclick="checkAdmin()">Είσοδος</button>
+    </div>
+  </div>
+
+  <div class="admin-dashboard" id="adminDashboard">
+    <div class="admin-topbar">
+      <h2>📊 Dashboard Αποτελεσμάτων — PickUp Module</h2>
+      <button class="clear-btn" onclick="clearResults()">🗑️ Διαγραφή Όλων</button>
+    </div>
+    <div class="stats-row" id="adminStats"></div>
+    <div class="section-header">Αποτελέσματα Εξεταζομένων</div>
+    <div style="overflow-x:auto;">
+      <table class="results-table" id="resultsTable">
+        <thead>
+          <tr>
+            <th>Ονοματεπώνυμο</th>
+            <th>Ημερομηνία</th>
+            <th>Βαθμός</th>
+            <th>Ποσοστό</th>
+            <th>Λάθος σε ερωτήσεις</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+    <div class="weakness-section">
+      <h3>🎯 Ανάλυση Αδυναμιών — Ποιες ερωτήσεις αποτυγχάνουν περισσότερο</h3>
+      <div id="weaknessChart"></div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const TOTAL = 15;
+const ADMIN_PASSWORD = '4aexpress2024';
+let correctCount = 0, answeredCount = 0, currentExaminer = '';
+let wrongQuestions = [];
+
+const feedbacks = {
+  1:{c:"✅ Σωστά! Η διαφορά είναι αν έχουμε το δέμα ή όχι — όχι πού βρίσκεται ο πελάτης.",w:"❌ Λάθος. PickUp = δεν έχουμε το δέμα, πηγαίνουμε να παραλάβουμε. Booking = το δέμα είναι φυσικά μπροστά μας."},
+  2:{c:"✅ Σωστά! Και AWB Number και Pick Order Number παράγονται αυτόματα κατά το Submit.",w:"❌ Λάθος. Το σύστημα παράγει αυτόματα ΚΑΙ AWB Number ΚΑΙ Pick Order Number."},
+  3:{c:'✅ Σωστά! Η τελεία "." εμφανίζει ΟΛΗ τη λίστα πελατών.',w:'❌ Λάθος. Πάτα "." (τελεία) για πλήρη λίστα. Γράμματα φιλτράρουν, ΑΦΜ αναζητά αν είναι καταχωρημένο.'},
+  4:{c:"✅ Σωστά! COMBI = συνδυασμός αεροπορικής και οδικής μεταφοράς.",w:"❌ Λάθος. Για αέρα + οδό χρησιμοποιείται το COMBI."},
+  5:{c:"✅ Σωστά — είναι ΛΑΘΟΣ! Δεν επιτρέπεται παρελθοντική ημερομηνία, ούτε μια μέρα πίσω.",w:"❌ Λάθος. Το Pickup Date ΔΕΝ μπορεί να πάει πίσω — μόνο σημερινή ή μελλοντική ημερομηνία."},
+  6:{c:"✅ Σωστά! Το ΑΦΜ λειτουργεί ως κριτήριο αναζήτησης αν έχει καταχωρηθεί στο Master.",w:"❌ Λάθος. Αν το ΑΦΜ είναι στο Master του πελάτη, μπορείς να το χρησιμοποιήσεις για αναζήτηση."},
+  7:{c:"✅ Σωστά! ACCOUNT = εταιρικός λογαριασμός με πίστωση — τιμολόγηση περιοδικά.",w:"❌ Λάθος. ACCOUNT σημαίνει ο πελάτης έχει πιστωτικό λογαριασμό και τιμολογείται αργότερα."},
+  8:{c:"✅ Σωστά! 50×40×30 = 60.000 ÷ 5.000 = 12 kg volumetric.",w:"❌ Λάθος. 50×40×30 = 60.000 cm³ ÷ 5.000 (AIR) = 12 kg."},
+  9:{c:'✅ Σωστά! RO = SURFACE = Οδική μεταφορά.',w:'❌ Λάθος. Οδική μεταφορά (Surface) = κωδικός "RO".'},
+  10:{c:'✅ Σωστά! Πάντα ξεκινάς από την αναζήτηση πελάτη στο Client/Acc No.',w:'❌ Λάθος. Πρώτη ενέργεια = Client/Acc No. για να φορτωθούν αυτόματα τα στοιχεία.'},
+  11:{c:"✅ Σωστά! Η θέση του πελάτη δεν έχει σημασία — σημασία έχει ότι δεν έχουμε το δέμα. Άρα PickUp.",w:"❌ Λάθος. PickUp ή Booking εξαρτάται από το αν έχουμε το δέμα στα χέρια μας — όχι πού βρίσκεται ο πελάτης."},
+  12:{c:"✅ Σωστά! BUY COD = αγορά προϊόντος με αντικαταβολή — τα χρήματα αγοράς είναι διαθέσιμα και εγγυημένα κατά την παραλαβή.",w:"❌ Λάθος. BUY COD χρησιμοποιείται όταν ο παραλήπτης αγοράζει προϊόν — τα χρήματα πρέπει να είναι διαθέσιμα κατά την παράδοση."},
+  13:{c:"✅ Σωστά! Μικρότερος divisor (3000) = μεγαλύτερο αποτέλεσμα = SHIP CARGO τιμωρεί πιο πολύ τον όγκο.",w:"❌ Λάθος. 3000 < 5000 άρα SHIP CARGO δίνει μεγαλύτερο volumetric weight για το ίδιο κουτί."},
+  14:{c:"✅ Σωστά! COD = καμία παράδοση χωρίς είσπραξη. Ο οδηγός επιστρέφει το δέμα.",w:"❌ Λάθος. Χωρίς είσπραξη = δεν παραδίδεται. Ο οδηγός φέρει οικονομική ευθύνη."},
+  15:{c:"✅ Σωστά! 60×50×40 = 120.000 ÷ 3.000 = 40 kg volumetric. 40 > 15 άρα χρεώνεις 40 kg.",w:"❌ Λάθος. 60×50×40 = 120.000 ÷ 3.000 = 40 kg volumetric > 15 kg φυσικό → χρεώνεις 40 kg."},
+  16:{c:"✅ Άριστα! Κόλπο του 50: 80×30 = 2.400 → ÷100 = 24 kg volumetric > 20 kg φυσικό → χρεώνεις 24 kg.",w:"❌ Λάθος. Κόλπο του 50: 80×30 = 2.400 → ÷100 = 24 kg volumetric. 24 > 20 φυσικό → χρεώνεις 24 kg."}
+};
+
+function goToQuiz(btn) {
+  showSection('quiz', btn);
+  document.getElementById('nameGate').style.display = 'flex';
+  document.getElementById('quizContent').style.display = 'none';
+  document.getElementById('scoreSection').classList.remove('show');
+  document.getElementById('quizQuestions').style.display = 'block';
+}
+
+function startQuiz() {
+  const inp = document.getElementById('nameInput');
+  const name = inp.value.trim();
+  if (name.length < 3) {
+    inp.classList.add('error');
+    document.getElementById('nameError').textContent = 'Παρακαλώ εισάγετε πλήρες ονοματεπώνυμο (τουλάχιστον 3 χαρακτήρες).';
+    return;
+  }
+  currentExaminer = name; correctCount = 0; answeredCount = 0; wrongQuestions = [];
+  document.getElementById('examinerName').textContent = name;
+  document.getElementById('qAnswered').textContent = '0';
+  document.getElementById('qCorrect').textContent = '0';
+  document.getElementById('nameGate').style.display = 'none';
+  document.getElementById('quizContent').style.display = 'block';
+  updateProgress();
+}
+
+function lockCard(card) { /* cards lock on first answer — no re-answering */ }
+
+function answerMCQ(btn, isCorrect, qNum) {
+  const card = btn.closest('.question-card');
+  if (card.dataset.answered === 'true') return;
+  card.dataset.answered = 'true';
+  card.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    if (b === btn && isCorrect) b.classList.add('correct');
+    else if (b === btn && !isCorrect) b.classList.add('wrong');
+    else if (b.onclick.toString().includes('true,') || b.onclick.toString().includes('true,')) {
+      if (!isCorrect) {
+        // find the correct one
+        const onclickStr = b.getAttribute('onclick') || '';
+        if (onclickStr.includes(',true,')) b.classList.add('reveal');
+      }
+    }
+  });
+  // Re-scan for correct reveal
+  if (!isCorrect) {
+    card.querySelectorAll('.option-btn').forEach(b => {
+      const oc = b.getAttribute('onclick') || '';
+      if (oc.includes(',true,') && b !== btn) b.classList.add('reveal');
+    });
+  }
+  showFeedback(qNum, isCorrect);
+  if (isCorrect) correctCount++;
+  else wrongQuestions.push({id:qNum, level:card.dataset.level, text:card.dataset.text});
+  updateStats();
+}
+
+function answerTF(btn, isCorrect, qNum) {
+  const card = btn.closest('.question-card');
+  if (card.dataset.answered === 'true') return;
+  card.dataset.answered = 'true';
+  card.querySelectorAll('.tf-btn').forEach(b => {
+    b.disabled = true;
+    if (b === btn) b.classList.add(isCorrect ? 'correct' : 'wrong');
+    else if (!isCorrect) b.classList.add('reveal');
+  });
+  showFeedback(qNum, isCorrect);
+  if (isCorrect) correctCount++;
+  else wrongQuestions.push({id:qNum, level:card.dataset.level, text:card.dataset.text});
+  updateStats();
+}
+
+function checkFill(qNum, accepted) {
+  const input = document.getElementById('fill' + qNum);
+  const card = input.closest('.question-card');
+  if (card.dataset.answered === 'true') return;
+  const val = input.value.trim().toLowerCase();
+  if (!val) return;
+  const isCorrect = accepted.some(a => a.toLowerCase() === val);
+  card.dataset.answered = 'true';
+  input.disabled = true; input.nextElementSibling.disabled = true;
+  input.classList.add(isCorrect ? 'correct' : 'wrong');
+  showFeedback(qNum, isCorrect);
+  if (isCorrect) correctCount++;
+  else wrongQuestions.push({id:qNum, level:card.dataset.level, text:card.dataset.text});
+  updateStats();
+}
+
+function showFeedback(qNum, isCorrect) {
+  const fb = document.getElementById('fb' + qNum);
+  fb.textContent = isCorrect ? feedbacks[qNum].c : feedbacks[qNum].w;
+  fb.className = 'feedback show ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
+}
+
+function updateStats() {
+  answeredCount = document.querySelectorAll('.question-card[data-answered="true"]').length;
+  document.getElementById('qAnswered').textContent = answeredCount;
+  document.getElementById('qCorrect').textContent = correctCount;
+  updateProgress();
+  if (answeredCount === TOTAL) setTimeout(showScore, 700);
+}
+
+function showScore() {
+  const pct = Math.round((correctCount / TOTAL) * 100);
+  document.getElementById('scoreNum').textContent = correctCount;
+  document.getElementById('sbCorrect').textContent = correctCount;
+  document.getElementById('sbWrong').textContent = TOTAL - correctCount;
+  document.getElementById('sbPct').textContent = pct + '%';
+  let title, msg;
+  if (pct >= 90){title='🏆 Άριστα!';msg='Εξαιρετική γνώση του PickUp module. Έτοιμος για πραγματική δουλειά.';}
+  else if (pct >= 70){title='👍 Καλά!';msg='Καλή βάση — επανέλαβε τα σημεία που έχεις αδυναμία.';}
+  else if (pct >= 50){title='📚 Χρειάζεται επανάληψη';msg='Πάνω από τη μέση αλλά χρειάζεσαι περισσότερη εξάσκηση.';}
+  else{title='🔄 Επανέλαβε το υλικό';msg='Ξαναδιάβασε τις 6 ενότητες και δοκίμασε ξανά.';}
+  document.getElementById('scoreTitle').textContent = title;
+  document.getElementById('scoreMsg').textContent = msg;
+  if (wrongQuestions.length > 0) {
+    document.getElementById('wrongList').innerHTML = wrongQuestions.map(w =>
+      `<div class="wrong-item"><div class="wi-q">Ερ. ${w.id}: ${w.text}</div><span class="wrong-tag ${w.level}">${w.level==='basic'?'ΒΑΣΙΚΟ':w.level==='medium'?'ΜΕΣΑΙΟ':'ΔΥΣΚΟΛΟ'}</span></div>`
+    ).join('');
+    document.getElementById('wrongAnalysis').style.display = 'block';
+  }
+  document.getElementById('scoreSection').classList.add('show');
+  saveResult(pct);
+}
+
+const SHEETS_API = 'https://script.google.com/macros/s/AKfycbwBcuHINXWCT1Qr4K87T5wjlj7RAojucKmRNgIlIau2ZsTzSo25fdFfBcnu-OhLVAxyhA/exec';
+
+async function saveResult(pct) {
+  // 1. Αποθήκευση τοπικά για Admin Panel
+  try {
+    let results = [];
+    try { const e = await window.storage.get('pickup_results'); if(e) results = JSON.parse(e.value); } catch(e){}
+    results.push({name:currentExaminer, date:new Date().toLocaleString('el-GR'), score:correctCount, total:TOTAL, pct, wrongTexts:wrongQuestions.map(w=>({id:w.id,text:w.text,level:w.level}))});
+    await window.storage.set('pickup_results', JSON.stringify(results));
+  } catch(e){ console.log('Storage:', e); }
+
+  // 2. Αποστολή στο Google Sheets με GET
+  try {
+    const wrongIds = wrongQuestions.map(w => 'Ερ.' + w.id).join(', ') || '—';
+    const params = new URLSearchParams({
+      timestamp: new Date().toLocaleString('el-GR'),
+      name: currentExaminer,
+      role: 'Υπάλληλος Γραφείου',
+      office: '—',
+      module: 'O01 · PickUp',
+      score: correctCount + '/' + TOTAL,
+      wrong: wrongIds
+    });
+    await fetch(SHEETS_API + '?' + params.toString(), { mode: 'no-cors' });
+    console.log('✅ Καταγράφηκε στο Google Sheets');
+  } catch(e){ console.log('Sheets error:', e); }
+}
+
+async function loadResults() {
+  try { const e = await window.storage.get('pickup_results'); return e ? JSON.parse(e.value) : []; } catch(e){ return []; }
+}
+
+async function clearResults() {
+  if (!confirm('Διαγραφή ΟΛΩΝ των αποτελεσμάτων; Δεν αναιρείται.')) return;
+  try { await window.storage.delete('pickup_results'); } catch(e){}
+  renderDashboard([]);
+}
+
+function checkAdmin() {
+  if (document.getElementById('adminPass').value === ADMIN_PASSWORD) {
+    document.getElementById('adminGate').style.display = 'none';
+    document.getElementById('adminDashboard').classList.add('show');
+    loadResults().then(renderDashboard);
+  } else {
+    document.getElementById('adminError').textContent = 'Λάθος κωδικός.';
+    document.getElementById('adminPass').value = '';
+  }
+}
+
+function renderDashboard(results) {
+  const total = results.length;
+  const avg = total ? Math.round(results.reduce((s,r)=>s+r.pct,0)/total) : 0;
+  const passed = results.filter(r=>r.pct>=70).length;
+  document.getElementById('adminStats').innerHTML = `
+    <div class="stat-card blue"><span class="sc-val">${total}</span><span class="sc-lbl">ΣΥΝΟΛΟ ΤΕΣΤ</span></div>
+    <div class="stat-card yellow"><span class="sc-val">${avg}%</span><span class="sc-lbl">ΜΕΣΟΣ ΟΡΟΣ</span></div>
+    <div class="stat-card green"><span class="sc-val">${passed}</span><span class="sc-lbl">ΕΠΙΤΥΧΟΝΤΕΣ ≥70%</span></div>
+    <div class="stat-card red"><span class="sc-val">${total-passed}</span><span class="sc-lbl">ΑΠΟΤΥΧΟΝΤΕΣ</span></div>`;
+  const tbody = document.getElementById('resultsBody');
+  if (!total) { tbody.innerHTML='<tr><td colspan="5" class="empty-state">Δεν υπάρχουν αποτελέσματα ακόμα.</td></tr>'; }
+  else {
+    tbody.innerHTML = [...results].reverse().map(r => {
+      const cls = r.pct>=90?'pct-high':r.pct>=70?'pct-mid':'pct-low';
+      const wrongs = (r.wrongTexts||[]).map(w=>`Ερ.${w.id}`).join(', ')||'—';
+      return `<tr><td><strong>${r.name}</strong></td><td style="font-family:monospace;font-size:11px;color:var(--muted)">${r.date}</td><td><strong>${r.score}/${r.total}</strong></td><td><span class="pct-badge ${cls}">${r.pct}%</span></td><td style="font-size:11px;color:var(--error)">${wrongs}</td></tr>`;
+    }).join('');
+  }
+  const qCounts = {}, qTexts = {};
+  results.forEach(r => (r.wrongTexts||[]).forEach(w => { qCounts[w.id]=(qCounts[w.id]||0)+1; qTexts[w.id]=w.text; }));
+  const chart = document.getElementById('weaknessChart');
+  if (!total || !Object.keys(qCounts).length) { chart.innerHTML='<div class="empty-state">Δεν υπάρχουν αρκετά δεδομένα.</div>'; return; }
+  chart.innerHTML = Object.entries(qCounts).sort((a,b)=>b[1]-a[1]).map(([id,cnt]) => {
+    const p = Math.round((cnt/total)*100);
+    return `<div class="weakness-bar"><div class="wb-label">Ερ.${id}: ${qTexts[id]||'—'}</div><div class="wb-track"><div class="wb-fill" style="width:${p}%"></div></div><div class="wb-pct">${p}%</div></div>`;
+  }).join('');
+}
+
+function resetQuiz() {
+  correctCount=0; answeredCount=0; wrongQuestions=[];
+  document.getElementById('qAnswered').textContent='0';
+  document.getElementById('qCorrect').textContent='0';
+  document.getElementById('scoreSection').classList.remove('show');
+  document.getElementById('wrongAnalysis').style.display='none';
+  document.getElementById('quizQuestions').style.display='block';
+  document.querySelectorAll('.question-card').forEach(card => {
+    card.dataset.answered='false';
+    card.querySelectorAll('.option-btn,.tf-btn').forEach(b=>{ b.disabled=false; b.className=b.className.includes('option-btn')?'option-btn':'tf-btn'; });
+    card.querySelectorAll('.fill-input').forEach(i=>{i.disabled=false;i.value='';i.className='fill-input';});
+    card.querySelectorAll('.check-btn').forEach(b=>b.disabled=false);
+    card.querySelectorAll('.feedback').forEach(f=>{f.className='feedback';f.textContent='';});
+  });
+  document.getElementById('nameInput').value='';
+  document.getElementById('nameInput').classList.remove('error');
+  document.getElementById('nameError').textContent='';
+  document.getElementById('nameGate').style.display='flex';
+  document.getElementById('quizContent').style.display='none';
+  updateProgress();
+}
+
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  updateProgress();
+}
+
+function updateProgress() {
+  const isQuiz = document.getElementById('quiz').classList.contains('active');
+  const fill = document.getElementById('progressFill');
+  const label = document.getElementById('progressLabel');
+  const pct = document.getElementById('progressPct');
+  if (isQuiz && document.getElementById('quizContent').style.display!=='none') {
+    const p = Math.round((answeredCount/TOTAL)*100);
+    fill.style.width=p+'%'; label.textContent=currentExaminer||'Αξιολόγηση'; pct.textContent=p+'%';
+  } else if (isQuiz) {
+    fill.style.width='0%'; label.textContent='Αξιολόγηση'; pct.textContent='0%';
+  } else {
+    fill.style.width='100%'; label.textContent='Εκπαιδευτικό Υλικό'; pct.textContent='100%';
+  }
+}
+</script>
+</body>
+</html>
