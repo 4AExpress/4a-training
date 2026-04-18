@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4A Express — O05 Query Module</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inconsolata:wght@400;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
+:root{--red:#cc1020;--red-dark:#8b0a14;--bg:#f0ece6;--dark:#1a1208;--mid:#4a3f35;--muted:#9e8e80;--border:#ddd5c8;--success:#1a7a4a;--error:#cc1020;--warning:#d97706;--card:#fff;--tag-bg:#f0ebe4;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Lora',Georgia,serif;background:var(--bg);color:var(--dark);min-height:100vh;}
+.site-header{background:var(--red);position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,.25);}
+.header-inner{max-width:1000px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:white;letter-spacing:2px;}
+.logo span{opacity:.7;font-weight:400;font-size:10px;display:block;letter-spacing:1px;}
+.progress-bar-wrap{flex:1;max-width:240px;}
+.progress-label{font-family:'Inconsolata',monospace;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;display:flex;justify-content:space-between;}
+.progress-track{background:rgba(255,255,255,.2);border-radius:100px;height:5px;overflow:hidden;}
+.progress-fill{height:100%;background:white;border-radius:100px;transition:width .5s ease;width:0%;}
+.nav-tabs{display:flex;gap:3px;}
+.nav-tab{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;padding:6px 11px;border-radius:6px;border:none;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.7);background:transparent;}
+.nav-tab.active,.nav-tab:hover{background:rgba(255,255,255,.2);color:white;}
+.main{max-width:1000px;margin:0 auto;padding:36px 22px 80px;}
+.section{display:none;}
+.section.active{display:block;animation:fadeIn .4s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.hero{background:var(--dark);border-radius:16px;padding:36px 34px;color:white;margin-bottom:26px;position:relative;overflow:hidden;}
+.hero::before{content:'QUERY';position:absolute;right:-10px;top:-5px;font-family:'Syne',sans-serif;font-size:100px;font-weight:800;opacity:.05;line-height:1;}
+.hero-badge{font-family:'Inconsolata',monospace;font-size:10px;letter-spacing:2px;background:rgba(255,255,255,.1);padding:3px 11px;border-radius:100px;display:inline-block;margin-bottom:12px;color:rgba(255,255,255,.8);}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(22px,5vw,36px);font-weight:800;line-height:1.1;margin-bottom:9px;}
+.hero p{font-size:14px;opacity:.7;line-height:1.6;font-style:italic;}
+.hero-meta{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;}
+.hero-stat{font-family:'Inconsolata',monospace;font-size:11px;opacity:.7;display:flex;align-items:center;gap:5px;}
+.hero-stat::before{content:'▸';opacity:.5;}
+.section-hdr{font-family:'Inconsolata',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:13px;display:flex;align-items:center;gap:9px;}
+.section-hdr::after{content:'';flex:1;height:1px;background:var(--border);}
+/* DEMO */
+.demo-wrap{background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:22px;box-shadow:0 4px 20px rgba(0,0,0,.08);}
+.demo-hdr{background:var(--dark);color:white;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+.demo-hdr-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.demo-badge{font-family:'Inconsolata',monospace;font-size:9px;background:var(--red);padding:2px 8px;border-radius:100px;}
+.demo-ctrl{display:flex;gap:6px;align-items:center;}
+.dbtn{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;transition:all .2s;}
+.dbtn.play{background:var(--red);color:white;}
+.dbtn.play:hover{background:var(--red-dark);}
+.dbtn.rst{background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);}
+.dbtn.pause{background:#f59e0b;color:#1a1208;font-size:14px;padding:8px 18px;letter-spacing:1px;}
+.dbtn.pause:hover{background:#d97706;transform:scale(1.05);}
+.dbtn.resume{background:#22c55e;color:white;font-size:13px;padding:8px 16px;}
+.dbtn.resume:hover{background:#16a34a;transform:scale(1.05);}
+.spd{padding:3px 7px;border-radius:4px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Inconsolata',monospace;font-size:10px;}
+.spd.on{background:rgba(255,255,255,.15);color:white;}
+
+/* ── CALLOUT CLOUDS ── */
+.callout{position:absolute;z-index:50;pointer-events:none;display:none;animation:callIn .3s ease both;}
+.callout.show{display:block;}
+@keyframes callIn{from{opacity:0;transform:scale(.85) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.callout-bubble{background:#1a1208;color:white;border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.8;max-width:280px;box-shadow:0 6px 28px rgba(0,0,0,.45);position:relative;font-family:'Lora',serif;}
+.callout-bubble::after{content:'';position:absolute;width:10px;height:10px;background:#1a1208;transform:rotate(45deg);}
+.callout-bubble.left::after{right:-5px;top:50%;margin-top:-5px;}
+.callout-bubble.right::after{left:-5px;top:50%;margin-top:-5px;}
+.callout-bubble.bottom::after{top:-5px;left:50%;margin-left:-5px;}
+.callout-bubble.top::after{bottom:-5px;left:50%;margin-left:-5px;}
+.callout-bubble .cb-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:6px;letter-spacing:.3px;}
+.callout-bubble .cb-icon{font-size:16px;margin-right:5px;}
+
+/* highlight pulse for changed fields */
+@keyframes fieldPulse{0%{background:transparent}30%{background:#fef3c7}70%{background:#fef3c7}100%{background:transparent}}
+.field-highlight{animation:fieldPulse 1.5s ease;}
+@keyframes fieldChange{0%{background:transparent}30%{background:#dcfce7}70%{background:#dcfce7}100%{background:transparent}}
+.field-changed{animation:fieldChange 1.5s ease;}
+.dprog{height:3px;background:rgba(255,255,255,.1);}
+.dprog-fill{height:100%;background:var(--red);width:0%;transition:width .3s;}
+.steps{display:flex;gap:5px;padding:8px 14px;background:#f8f5f0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.sp{font-family:'Inconsolata',monospace;font-size:9px;padding:3px 9px;border-radius:100px;border:1px solid var(--border);color:var(--muted);background:white;transition:all .3s;}
+.sp.on{background:var(--red);border-color:var(--red);color:white;font-weight:600;}
+.sp.done{background:#dcfce7;border-color:#86efac;color:#15803d;}
+/* CMS */
+.cms{font-family:Arial,sans-serif;}
+.cms-top{background:var(--red);display:flex;align-items:center;padding:5px 10px;gap:8px;}
+.cms-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:11px;color:white;white-space:nowrap;}
+.cms-bar{flex:1;background:white;border-radius:2px;padding:4px 8px;font-size:10px;color:#aaa;display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden;}
+.cms-bar.focus{color:#333;border:2px solid #fbbf24;}
+.cur{display:inline-block;width:1px;height:11px;background:#333;vertical-align:middle;animation:blink .8s step-end infinite;margin-left:1px;}
+.cur.h{display:none;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.cms-tbns{display:flex;gap:3px;margin-left:auto;flex-shrink:0;}
+.cms-tbn{background:rgba(255,255,255,.15);color:white;padding:2px 6px;border-radius:2px;font-size:8px;font-weight:600;white-space:nowrap;}
+.cms-body{display:flex;min-height:300px;}
+.cms-menu{background:#2c3e50;width:120px;flex-shrink:0;padding:4px 0;}
+.cms-mi{padding:5px 8px;font-size:9px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:4px;}
+.cms-mi.hl{background:var(--red);color:white;}
+.cms-ms{padding:3px 8px 3px 18px;font-size:8px;color:rgba(255,255,255,.4);}
+.cms-ms.hl{background:rgba(204,16,32,.5);color:white;}
+.cms-cnt{flex:1;background:#f8f9fa;overflow:hidden;}
+.cms-bc{padding:4px 10px;font-size:8px;color:#666;border-bottom:1px solid #ddd;background:white;}
+.cms-pt{background:#555;color:white;padding:4px 10px;font-size:10px;font-weight:600;}
+.cms-form{padding:10px;display:flex;gap:8px;align-items:flex-end;background:white;border-bottom:1px solid #ddd;flex-wrap:wrap;}
+.cms-fl{display:flex;flex-direction:column;gap:2px;}
+.cms-fl label{font-size:8px;color:#555;font-weight:600;}
+.cms-fl label .r{color:red;}
+.cms-inp{border:1px solid #adb5bd;border-radius:2px;padding:3px 7px;font-size:10px;color:#333;background:white;min-width:160px;}
+.cms-inp.typ{border-color:var(--red);background:#fff5f5;}
+.cms-inp.fil{border-color:#28a745;}
+.cms-sel{border:1px solid #adb5bd;border-radius:2px;padding:3px 7px;font-size:9px;color:#333;background:white;}
+.cms-sbtn{background:var(--red);color:white;border:none;padding:4px 10px;border-radius:2px;font-size:9px;font-weight:700;cursor:pointer;}
+.cms-sec{margin:6px 10px;background:white;border:1px solid #ddd;border-radius:2px;}
+.cms-sh{background:#555;color:white;padding:4px 8px;font-size:9px;font-weight:700;letter-spacing:.5px;}
+.cms-grid{display:grid;grid-template-columns:1fr 1fr;}
+
+/* ── MODAL POPUPS ── */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;visibility:hidden;opacity:0;transition:opacity .2s,visibility .2s;}
+.modal-overlay.open{visibility:visible;opacity:1;}
+.modal-box{background:white;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);max-width:90vw;max-height:88vh;overflow-y:auto;position:relative;animation:modalIn .25s ease;}
+@keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{background:var(--red);color:white;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;}
+.modal-header h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.modal-close{background:rgba(255,255,255,.2);border:none;color:white;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:rgba(255,255,255,.35);}
+.mh{background:#333;color:white;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;font-family:'Syne',sans-serif;font-size:11px;}
+.mb{padding:0;}
+.mc{background:rgba(255,255,255,.2);border:none;color:white;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mc:hover{background:rgba(255,255,255,.35);}
+.modal-body{padding:16px;}
+/* Zebra label mockup */
+.zebra-sheet{background:white;border:1px solid #ddd;padding:14px;font-family:'Courier New',monospace;font-size:10px;line-height:1.7;max-width:380px;margin:0 auto;}
+.zebra-sheet .z-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:8px;}
+.zebra-sheet .z-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#cc1020;}
+.zebra-sheet .z-station{font-size:9px;text-align:right;color:#333;}
+.zebra-barcode{text-align:center;font-size:28px;letter-spacing:-2px;font-family:'Courier New';margin:8px 0;color:#000;}
+.zebra-barcode-text{text-align:center;font-size:11px;font-weight:700;letter-spacing:2px;color:#000;}
+.zebra-dest{font-size:36px;font-weight:800;text-align:center;border:3px solid #000;padding:4px;margin:8px 0;letter-spacing:3px;}
+.zebra-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:9px;margin:6px 0;}
+.zebra-field{font-size:9px;}.zebra-field strong{display:block;font-size:8px;color:#666;text-transform:uppercase;}
+.zebra-divider{border:none;border-top:1px dashed #000;margin:8px 0;}
+.zebra-copy{background:#f5f5f5;border:1px dashed #999;padding:4px 8px;font-size:8px;text-align:center;color:#666;margin-top:4px;}
+/* Tracking page mockup */
+.track-page{background:#f5f5f5;padding:16px;min-width:320px;}
+.track-page .tp-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:12px;color:#333;}
+.track-page .tp-awb{border:1px solid #ccc;padding:8px 12px;border-radius:4px;font-family:monospace;font-size:13px;background:white;margin-bottom:12px;}
+.track-page .tp-table{background:white;border:2px solid var(--red);width:100%;}
+.track-page .tp-th{background:var(--red);color:white;padding:6px 10px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-align:center;}
+.track-page .tp-row{display:grid;grid-template-columns:100px 1fr 150px;gap:8px;padding:5px 10px;border-bottom:1px solid #eee;font-size:10px;align-items:center;}
+.track-page .tp-loc{font-weight:700;color:#333;}
+.track-page .tp-date{color:#666;font-family:monospace;font-size:9px;}
+.track-page .tp-last{background:white;border:2px solid #333;padding:10px 14px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
+/* POD Signature */
+.pod-box{text-align:center;padding:20px;}
+.pod-sig{border:2px solid #ddd;border-radius:8px;padding:20px;background:#fafafa;display:inline-block;min-width:200px;}
+.pod-sig svg{display:block;margin:0 auto;}
+/* Edit address form */
+.edit-form{min-width:300px;}
+.edit-form .ef-field{margin-bottom:10px;}
+.edit-form .ef-field label{font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:3px;}
+.edit-form .ef-field input{width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:5px;font-size:12px;}
+.edit-form .ef-field input:focus{border-color:var(--red);outline:none;}
+/* Contractor copy confirm */
+.copy-confirm{text-align:center;padding:20px;}
+.copy-confirm .cc-awb{font-family:monospace;font-size:20px;font-weight:700;background:#f0f0f0;padding:8px 16px;border-radius:6px;display:inline-block;margin:10px 0;letter-spacing:2px;}
+
+.cms-row{display:grid;grid-template-columns:130px 1fr;border-bottom:1px solid #f0f0f0;font-size:9px;transition:filter .4s,opacity .4s;}
+.blur-mode .cms-row{filter:blur(2px);opacity:.25;pointer-events:none;}
+@keyframes btnBlink{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.15;transform:scale(1.2);}}
+.blur-mode .cms-row.spotlight{filter:blur(0)!important;opacity:1!important;background:#fffde7;box-shadow:0 0 0 2px #fbbf24;z-index:2;position:relative;border-radius:2px;pointer-events:all;}
+.blur-mode .cms-row.spotlight-green{filter:blur(0)!important;opacity:1!important;background:#f0fdf4;box-shadow:0 0 0 2px #22c55e;z-index:2;position:relative;border-radius:2px;pointer-events:all;}
+.blur-mode .cms-row.spotlight-blue{filter:blur(0)!important;opacity:1!important;background:#eff6ff;box-shadow:0 0 0 2px #3b82f6;z-index:2;position:relative;border-radius:2px;pointer-events:all;}
+/* Always keep modals on top */
+
+
+/* Section blur */
+.cms-sec.section-blur{filter:blur(2px);opacity:.25;transition:filter .4s,opacity .4s;}
+.cms-sec.section-focus{filter:blur(0);opacity:1;box-shadow:0 0 0 3px #fbbf24;transition:filter .4s,opacity .4s;border-radius:2px;}
+.cms-row{display:grid;grid-template-columns:130px 1fr;border-bottom:1px solid #f0f0f0;font-size:9px;}
+.cms-row:last-child{border-bottom:none;}
+.cms-lbl{padding:3px 6px;background:#f8f8f8;color:#666;border-right:1px solid #eee;}
+.cms-val{padding:3px 6px;color:#333;}
+.cms-val.r{color:var(--red);font-weight:700;}
+.cms-val.g{color:#28a745;font-weight:700;}
+.cms-val.b{color:#2563eb;}
+.cms-val.o{color:#f59e0b;font-weight:700;}
+.tlog{margin:6px 10px 10px;}
+.tlog-hdr{background:#555;color:white;padding:3px 8px;font-size:9px;font-weight:700;display:grid;grid-template-columns:45px 1fr 120px 120px;gap:6px;}
+.trow{display:grid;grid-template-columns:45px 1fr 120px 120px;gap:6px;padding:3px 8px;border-bottom:1px solid #f5f5f5;font-size:9px;opacity:0;transform:translateX(-8px);transition:all .35s;}
+.trow.vis{opacity:1;transform:translateX(0);}
+.ts{font-weight:700;color:var(--red);}
+.cms-acts{display:flex;gap:6px;padding:6px 10px;background:white;border-top:1px solid #eee;align-items:center;}
+.act{display:flex;align-items:center;gap:3px;padding:4px 9px;border-radius:3px;font-size:9px;font-weight:600;border:none;cursor:pointer;transition:all .25s;}
+.act.call{background:#e8f4fd;color:#2563eb;border:1px solid #93c5fd;}
+.act.sms{background:#f0fdf4;color:#15803d;border:1px solid #86efac;}
+.act.ref{background:#fff5f5;color:var(--red);border:1px solid #fca5a5;}
+.act.dim{opacity:.45;}
+.act.pulse{animation:pa .4s ease;}
+@keyframes pa{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.sms-pop{position:absolute;top:16px;right:16px;background:#25d366;color:white;border-radius:8px;padding:8px 12px;font-size:10px;box-shadow:0 4px 16px rgba(0,0,0,.25);display:none;animation:si .25s ease;max-width:180px;z-index:10;}
+.sms-pop.show{display:block;}
+@keyframes si{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.ann{background:var(--dark);color:white;padding:12px 18px;font-size:13px;line-height:1.6;border-radius:0 0 14px 14px;min-height:50px;}
+.ann .hl{color:#fbbf24;font-weight:600;}
+.ann kbd{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:1px 5px;font-family:'Inconsolata',monospace;font-size:11px;}
+/* QUIZ */
+.quiz-hdr{background:var(--dark);border-radius:16px;padding:26px;color:white;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:13px;}
+.quiz-hdr h2{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;}
+.quiz-hdr p{font-size:12px;opacity:.7;margin-top:3px;font-style:italic;}
+.qstats{display:flex;gap:16px;}
+.qstat .val{font-family:'Inconsolata',monospace;font-size:24px;font-weight:600;color:#fbbf24;display:block;}
+.qstat .lbl{font-size:9px;opacity:.6;letter-spacing:1px;font-family:'Inconsolata',monospace;}
+.exbadge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:5px 11px;font-family:'Inconsolata',monospace;font-size:11px;color:rgba(255,255,255,.9);display:inline-flex;align-items:center;gap:6px;margin-top:8px;}
+.exbadge span{color:#fbbf24;font-weight:600;}
+.name-gate{min-height:50vh;display:flex;align-items:center;justify-content:center;}
+.name-box{background:white;border:1px solid var(--border);border-radius:20px;padding:38px 32px;max-width:390px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.08);}
+.name-box .gi{font-size:42px;margin-bottom:10px;}
+.name-box h2{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:5px;}
+.name-box p{font-size:12px;color:var(--mid);line-height:1.6;margin-bottom:18px;font-style:italic;}
+.ninp{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Lora',serif;font-size:14px;color:var(--dark);outline:none;transition:border-color .2s;margin-bottom:5px;text-align:center;}
+.ninp:focus{border-color:var(--red);}
+.ninp.err{border-color:var(--error);background:#fff5f5;}
+.nerr{font-size:10px;color:var(--error);margin-bottom:10px;min-height:14px;font-family:'Inconsolata',monospace;}
+.qcard{background:white;border:1px solid var(--border);border-radius:13px;padding:22px;margin-bottom:12px;}
+.qhdr{display:flex;gap:9px;align-items:flex-start;margin-bottom:13px;}
+.qn{font-family:'Inconsolata',monospace;font-size:9px;padding:2px 8px;border-radius:100px;font-weight:600;flex-shrink:0;margin-top:2px;}
+.qn.b{background:#dcfce7;color:#15803d;}
+.qn.m{background:#fef3c7;color:#b45309;}
+.qn.h{background:#fee2e2;color:#b91c1c;}
+.qt{font-size:14px;line-height:1.6;font-weight:500;}
+.opts{display:flex;flex-direction:column;gap:5px;}
+.ob{width:100%;text-align:left;padding:9px 13px;border:2px solid var(--border);border-radius:7px;background:white;cursor:pointer;font-family:'Lora',serif;font-size:12.5px;color:var(--dark);transition:all .15s;line-height:1.5;}
+.ob:hover:not(:disabled){border-color:var(--red);background:#fff5f5;}
+.ob.correct{border-color:var(--success)!important;background:#f0fdf4!important;color:#14532d!important;cursor:default;}
+.ob.wrong{border-color:var(--error)!important;background:#fff5f5!important;color:#7f1d1d!important;cursor:default;}
+.ob.reveal{border-color:var(--success)!important;background:#f0fdf4!important;color:#14532d!important;opacity:.5;cursor:default;}
+.ob:disabled{cursor:default;}
+.tfo{display:flex;gap:8px;}
+.tb{flex:1;padding:10px;border:2px solid var(--border);border-radius:7px;background:white;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;transition:all .15s;}
+.tb:hover:not(:disabled){border-color:var(--red);background:#fff5f5;}
+.tb.correct{border-color:var(--success)!important;background:#f0fdf4!important;color:var(--success)!important;cursor:default;}
+.tb.wrong{border-color:var(--error)!important;background:#fff5f5!important;color:var(--error)!important;cursor:default;}
+.tb.reveal{border-color:var(--success)!important;background:#f0fdf4!important;color:var(--success)!important;opacity:.5;cursor:default;}
+.tb:disabled{cursor:default;}
+.fb{margin-top:9px;padding:9px 11px;border-radius:7px;font-size:12px;line-height:1.6;display:none;}
+.fb.show{display:block;animation:fadeIn .3s ease;}
+.fb.ok{background:#f0fdf4;border:1px solid #86efac;color:#14532d;}
+.fb.no{background:#fff5f5;border:1px solid #fca5a5;color:#7f1d1d;}
+.sc-wrap{display:none;text-align:center;padding:36px 16px;}
+.sc-wrap.show{display:block;animation:fadeIn .5s ease;}
+.sc-circle{width:140px;height:140px;border-radius:50%;border:7px solid var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 18px;background:white;box-shadow:0 8px 40px rgba(204,16,32,.15);}
+.sc-num{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;color:var(--red);line-height:1;}
+.sc-den{font-family:'Inconsolata',monospace;font-size:11px;color:var(--muted);}
+.sc-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:5px;}
+.sc-msg{font-size:13px;color:var(--mid);font-style:italic;margin-bottom:20px;}
+.sc-row{display:flex;justify-content:center;gap:14px;margin-bottom:20px;flex-wrap:wrap;}
+.sc-item{text-align:center;padding:11px 13px;background:white;border:1px solid var(--border);border-radius:9px;min-width:76px;}
+.sc-item .sv{font-family:'Inconsolata',monospace;font-size:20px;font-weight:600;display:block;}
+.sc-item.cs .sv{color:var(--success);}
+.sc-item.ws .sv{color:var(--error);}
+.sc-item.ps .sv{color:var(--warning);}
+.sc-item .sl{font-size:9px;color:var(--muted);font-family:'Inconsolata',monospace;margin-top:2px;}
+.wa{background:white;border:1px solid var(--border);border-radius:11px;padding:18px 22px;margin-bottom:20px;text-align:left;}
+.wa h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;}
+.wi{padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;display:flex;gap:8px;}
+.wi:last-child{border-bottom:none;}
+.wi .wq{color:var(--mid);flex:1;}
+.wt{font-family:'Inconsolata',monospace;font-size:9px;padding:2px 7px;border-radius:100px;flex-shrink:0;}
+.wt.b{background:#dcfce7;color:#15803d;}
+.wt.m{background:#fef3c7;color:#b45309;}
+.wt.h{background:#fee2e2;color:#b91c1c;}
+.abtns{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;}
+.rbtn{padding:11px 24px;background:var(--red);color:white;border:none;border-radius:9px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;transition:all .2s;}
+.rbtn:hover{background:var(--red-dark);transform:translateY(-1px);}
+.sbtn{padding:11px 24px;background:white;color:var(--dark);border:2px solid var(--border);border-radius:9px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo">4A EXPRESS <span>O05 · Query Module</span></div>
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span id="progressLabel">Εκπαίδευση</span><span id="progressPct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showSec('training',this)">📖 Υλικό</button>
+      <button class="nav-tab" onclick="goQuiz(this)">✏️ Αξιολόγηση</button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+<div class="section active" id="training">
+
+  <div class="hero">
+    <div class="hero-badge">MODULE O05 · ΥΠΑΛΛΗΛΟΙ ΓΡΑΦΕΙΟΥ</div>
+    <h1>Query Module<br>Αναζήτηση Αποστολών</h1>
+    <p>5 εστιασμένα demos με πραγματικά δεδομένα από το cms.4aexpress.com</p>
+    <div class="hero-meta">
+      <span class="hero-stat">Demo 1a — AWB & Pickup</span>
+      <span class="hero-stat">Demo 1b — Packet Details</span>
+      <span class="hero-stat">Demo 1c — Tracking Log</span>
+      <span class="hero-stat">Demo 2 — Κόκκινη Μπάρα</span>
+      <span class="hero-stat">Demo 3 — Call/SMS/Refuse</span>
+    </div>
+  </div>
+
+  <!-- DEMO 1a -->
+  <div class="section-hdr">Demo 1a — AWB Αναζήτηση & Pickup Details</div>
+  <div class="demo-wrap">
+    <div class="demo-hdr">
+      <div class="demo-hdr-title">🎬 Βήμα 1: Αναζήτηση <span class="demo-badge">AWB: 010790224862</span></div>
+      <div class="demo-ctrl">
+        <span style="font-family:'Inconsolata',monospace;font-size:10px;color:rgba(255,255,255,.4);">Ταχύτητα:</span>
+        <button class="spd on" id="s1a" onclick="spd(1,1,this)">1×</button>
+        <button class="spd" id="s1b" onclick="spd(1,1.5,this)">1.5×</button>
+        <button class="spd" id="s1c" onclick="spd(1,2,this)">2×</button>
+        <button class="dbtn rst" onclick="rst(1)">↺</button>
+        <button class="dbtn pause" id="bp1" onclick="togglePause(1)" style="display:none;">⏸</button>
+        <button class="dbtn play" id="b1" onclick="go(1)">▶ Έναρξη</button>
+      </div>
+    </div>
+    <div class="dprog"><div class="dprog-fill" id="p1"></div></div>
+    <div class="steps">
+      <div class="sp on" id="s1_1">1·Menu</div>
+      <div class="sp" id="s1_2">2·Πληκτρολόγηση AWB</div>
+      <div class="sp" id="s1_3">3·Search</div>
+      <div class="sp" id="s1_4">4·PickupStatus</div>
+      <div class="sp" id="s1_5">5·PS Sheet</div>
+      <div class="sp" id="s1_6">6·Tracking URL</div>
+    </div>
+    <div class="cms">
+      <div class="cms-top">
+        <div class="cms-logo">4A WORLDWIDE EXPRESS</div>
+        <div class="cms-bar"><span style="color:#bbb;">Enter Awb/Manifest/Challa</span></div>
+        <div class="cms-tbns"><div class="cms-tbn">Chat(1)</div><div class="cms-tbn">Daily Rec.</div><div class="cms-tbn">Runsheet</div></div>
+      </div>
+      <div class="cms-body">
+        <div class="cms-menu">
+          <div class="cms-mi">📊 Dashboard</div>
+          <div class="cms-mi">📦 PickUp</div>
+          <div class="cms-mi">⚙️ Operation</div>
+          <div class="cms-mi hl">🔍 Query</div>
+          <div class="cms-ms hl">AWB No. Query</div>
+          <div class="cms-ms">Route Dashboard</div>
+          <div class="cms-mi">📋 Reports</div>
+        </div>
+        <div class="cms-cnt">
+          <div class="cms-bc">Dashboard / Master / <strong>Awb No Query</strong></div>
+          <div class="cms-pt">Awb No Query</div>
+          <div class="cms-form">
+            <div class="cms-fl"><label>Awb No.<span class="r">*</span></label><input class="cms-inp" id="awbinp" value="" placeholder="Awb No." readonly></div>
+            <div class="cms-fl"><label>Search By<span class="r">*</span></label><select class="cms-sel"><option>Awb No.</option><option>Manifest No.</option><option>Bag No.</option><option>Challa</option></select></div>
+            <div class="cms-fl"><label>Type</label><select class="cms-sel"><option>Summarized</option></select></div>
+            <button class="cms-sbtn" id="sbtn1" style="opacity:.4;">🔍 Search</button>
+          </div>
+          <div id="res1" style="display:none;">
+            <div class="cms-sec" id="pick1" style="display:none;position:relative;">
+              <!-- CALLOUT: PickupStatus -->
+              <div class="callout" id="co_status" style="top:60px;right:8px;">
+                <div class="callout-bubble left">
+                  <div class="cb-title">📌 Μεταβαλλόμενο Πεδίο</div>
+                  <span style="background:#ede9fe;color:#6b21a8;padding:1px 5px;border-radius:3px;font-size:10px;display:inline-block;margin:1px 0;">Pending For PickupSheet</span><br>
+                  <span style="background:#fef9c3;color:#854d0e;padding:1px 5px;border-radius:3px;font-size:10px;display:inline-block;margin:1px 0;">PickupSheet Generated</span><br>
+                  <span style="background:#c3e6cb;color:#155724;padding:1px 5px;border-radius:3px;font-size:10px;display:inline-block;margin:1px 0;">Picked Up ✅</span><br>
+                  <span style="background:#dce8f5;color:#5b7fa6;padding:1px 5px;border-radius:3px;font-size:10px;display:inline-block;margin:1px 0;">Booked</span>
+                </div>
+              </div>
+              <!-- CALLOUT: PS Link -->
+              <div class="callout" id="co_ps" style="top:36px;right:8px;">
+                <div class="callout-bubble left">
+                  <div class="cb-title">📋 Pickup Sheet PS56650</div>
+                  Βλέπεις <strong>όλες τις αποστολές</strong><br>που έχουν ανατεθεί στον<br>οδηγό <strong>αυτή την ημέρα</strong>
+                </div>
+              </div>
+              <!-- CALLOUT: Tracking URL -->
+              <div class="callout" id="co_url" style="bottom:6px;right:8px;">
+                <div class="callout-bubble left">
+                  <div class="cb-title">📋 Αντιγραφή URL</div>
+                  <span style="font-family:'Inconsolata',monospace;font-size:10px;background:rgba(255,255,255,.15);padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;">Ctrl+C 📋</span><br>
+                  Στέλνεις email σε<br>
+                  <strong>Αποστολέα</strong> &amp; <strong>Παραλήπτη</strong><br>
+                  → Live tracking από browser
+                </div>
+              </div>
+              <div class="cms-sh">Pickup Details</div>
+              <div class="cms-grid">
+                <div>
+                  <div class="cms-row"><span class="cms-lbl">PickupReqNo</span><span class="cms-val">Booked by Client</span></div>
+                  <div class="cms-row"><span class="cms-lbl">AwbNo</span><span class="cms-val r">●010790224862</span></div>
+                  <div class="cms-row"><span class="cms-lbl">Consignor</span><span class="cms-val">EVERSATIS OPTIMUM</span></div>
+                  <div class="cms-row"><span class="cms-lbl">Origin → Dest.</span><span class="cms-val">ATHENS:ATH → PAFOS:PFO</span></div>
+                  <div class="cms-row" id="row_status"><span class="cms-lbl">PickupStatus</span><span class="cms-val" id="pstatus" style="color:#5b7fa6;font-weight:700;background:#dce8f5;padding:2px 6px;border-radius:3px;">Booked</span></div>
+                  <div class="cms-row" id="row_url"><span class="cms-lbl">Tracking URL</span><span class="cms-val" id="trackurl" style="display:none;"><a href="#" onclick="return false;" style="color:#2563eb;font-size:9px;text-decoration:underline;">http://cms.4aexpress.com/Query/TrackAwb...?Awbno=010790224862</a><br><span style="background:#fef3c7;border:1px solid #fcd34d;border-radius:3px;padding:1px 4px;font-size:8px;color:#92400e;">📧 Αποστολέας &amp; Παραλήπτης</span></span></div>
+                </div>
+                <div>
+                  <div class="cms-row"><span class="cms-lbl">Pickup Date</span><span class="cms-val">20-Mar-2026</span></div>
+                  <div class="cms-row" id="row_ps"><span class="cms-lbl">Pickup Sheet</span><span class="cms-val"><span id="pslink" style="color:#2563eb;cursor:pointer;text-decoration:underline;" onclick="showPS()">●PS56650</span> <span style="font-size:8px;color:#888;">(κλικ → εντολές οδηγού)</span></span></div>
+                  <div class="cms-row"><span class="cms-lbl">Entry Station</span><span class="cms-val">SKY-4A EXPRESS ATH</span></div>
+                  <div class="cms-row"><span class="cms-lbl">ShipmentType</span><span class="cms-val o">COD</span></div>
+                  <div class="cms-row"><span class="cms-lbl">Cash</span><span class="cms-val">75.00</span></div>
+                </div>
+              </div>
+            </div>
+            <!-- Pickup Sheet popup -->
+            <div id="pspopup" style="display:none;margin:0 6px 6px;background:white;border:2px solid var(--red);border-radius:4px;overflow:hidden;transition:filter .4s,opacity .4s;">
+              <div style="background:var(--red);color:white;padding:4px 10px;font-size:10px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">
+                <span>📋 Pickup Sheet PS56650 — 20-Mar-2026 | Driver: JOUAN SAVERDA | Vehicle: FORD TRANSIT</span>
+                <span onclick="document.getElementById('pspopup').style.display='none'" style="cursor:pointer;font-size:12px;">✕</span>
+              </div>
+              <table style="width:100%;border-collapse:collapse;font-size:9px;">
+                <thead><tr style="background:#f5f5f5;"><th style="padding:3px 6px;border:1px solid #ddd;text-align:left;">S.No</th><th style="padding:3px 6px;border:1px solid #ddd;">Customer</th><th style="padding:3px 6px;border:1px solid #ddd;">AWB</th><th style="padding:3px 6px;border:1px solid #ddd;">Dest.</th><th style="padding:3px 6px;border:1px solid #ddd;">Wt.</th><th style="padding:3px 6px;border:1px solid #ddd;">COD</th></tr></thead>
+                <tbody>
+                  <tr><td style="padding:3px 6px;border:1px solid #eee;">1</td><td style="padding:3px 6px;border:1px solid #eee;">ATTIKA DENTAL LAB</td><td style="padding:3px 6px;border:1px solid #eee;font-family:monospace;">010790224860</td><td style="padding:3px 6px;border:1px solid #eee;">CY-LIMASSOL</td><td style="padding:3px 6px;border:1px solid #eee;">1.000</td><td style="padding:3px 6px;border:1px solid #eee;">0.00</td></tr>
+                  <tr style="background:#f9f9f9;"><td style="padding:3px 6px;border:1px solid #eee;">2</td><td style="padding:3px 6px;border:1px solid #eee;">PIECE OF CLOTH O.E.</td><td style="padding:3px 6px;border:1px solid #eee;font-family:monospace;">010790224861</td><td style="padding:3px 6px;border:1px solid #eee;">CY-LARNACA</td><td style="padding:3px 6px;border:1px solid #eee;">0.700</td><td style="padding:3px 6px;border:1px solid #eee;">0.00</td></tr>
+                  <tr style="background:#fff3cd;"><td style="padding:3px 6px;border:1px solid #eee;">3</td><td style="padding:3px 6px;border:1px solid #eee;font-weight:700;">EVERSATIS OPTIMUM</td><td style="padding:3px 6px;border:1px solid #eee;font-family:monospace;color:var(--red);font-weight:700;">010790224862 ←</td><td style="padding:3px 6px;border:1px solid #eee;">CY-PAFOS</td><td style="padding:3px 6px;border:1px solid #eee;">0.400</td><td style="padding:3px 6px;border:1px solid #eee;color:var(--red);font-weight:700;">75.00</td></tr>
+                  <tr style="background:#f9f9f9;"><td style="padding:3px 6px;border:1px solid #eee;">4</td><td style="padding:3px 6px;border:1px solid #eee;">EVERSATIS OPTIMUM</td><td style="padding:3px 6px;border:1px solid #eee;font-family:monospace;">010790224863</td><td style="padding:3px 6px;border:1px solid #eee;">CY-PAFOS</td><td style="padding:3px 6px;border:1px solid #eee;">0.200</td><td style="padding:3px 6px;border:1px solid #eee;">46.50</td></tr>
+                  <tr><td style="padding:3px 6px;border:1px solid #eee;">5</td><td style="padding:3px 6px;border:1px solid #eee;">EVERSATIS OPTIMUM</td><td style="padding:3px 6px;border:1px solid #eee;font-family:monospace;">010790224885</td><td style="padding:3px 6px;border:1px solid #eee;">CY-LARNACA</td><td style="padding:3px 6px;border:1px solid #eee;">0.500</td><td style="padding:3px 6px;border:1px solid #eee;">0.00</td></tr>
+                  <tr style="background:#f9f9f9;"><td style="padding:3px 6px;border:1px solid #eee;">6</td><td style="padding:3px 6px;border:1px solid #eee;">MANGRINOX S.A.</td><td style="padding:3px 6px;border:1px solid #eee;font-family:monospace;">010990224789</td><td style="padding:3px 6px;border:1px solid #eee;">CY-LARNACA</td><td style="padding:3px 6px;border:1px solid #eee;">1.000</td><td style="padding:3px 6px;border:1px solid #eee;">0.00</td></tr>
+                </tbody>
+              </table>
+              <div style="padding:4px 8px;background:#f8f8f8;font-size:9px;color:#666;border-top:1px solid #ddd;">Η αποστολή 010790224862 είναι η #3 — ανατεθειμένη στον οδηγό JOUAN SAVERDA αυτή την ημέρα</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ann" id="a1">Πάτα <span class="hl">▶ Έναρξη</span> — Demo 1a: Αναζήτηση AWB και ανάλυση Pickup Details.</div>
+  </div>
+
+  <!-- DEMO 1b -->
+  <div class="section-hdr">Demo 1b — Packet Details — Guided Tour</div>
+  <div class="demo-wrap">
+    <div class="demo-hdr">
+      <div class="demo-hdr-title">🎬 Ανάλυση πεδίων <span class="demo-badge">AWB: 010790224862</span></div>
+      <div class="demo-ctrl">
+        <button class="dbtn rst" onclick="rst(4)">↺</button>
+        <button class="dbtn pause" id="bp4" onclick="togglePause(4)" style="display:none;">⏸</button>
+        <button class="dbtn play" id="b4" onclick="go(4)">▶ Έναρξη</button>
+      </div>
+    </div>
+    <div class="dprog"><div class="dprog-fill" id="p4"></div></div>
+    <div class="steps">
+      <div class="sp on" id="s4_1">1·AWB & Print</div>
+      <div class="sp" id="s4_2">2·Booking & Service</div>
+      <div class="sp" id="s4_3">3·Origin & Zone</div>
+      <div class="sp" id="s4_4">4·Βάρη</div>
+      <div class="sp" id="s4_5">5·Client & Ref No.</div>
+      <div class="sp" id="s4_6">6·Consignor</div>
+      <div class="sp" id="s4_7">7·Consignee & ✏️</div>
+      <div class="sp" id="s4_8">8·Contractor</div>
+      <div class="sp" id="s4_9">9·Status & POD</div>
+      <div class="sp" id="s4_10">10·COD</div>
+    </div>
+    <div class="cms">
+      <div class="cms-top">
+        <div class="cms-logo">4A WORLDWIDE EXPRESS</div>
+        <div class="cms-bar"><span style="color:#bbb;">AWB: 010790224862</span></div>
+        <div class="cms-tbns"><div class="cms-tbn">Chat(1)</div><div class="cms-tbn">Daily Rec.</div></div>
+      </div>
+      <div class="cms-cnt" style="background:#f8f9fa;">
+        <div class="cms-pt">Packet Details — AWB 010790224862</div>
+        <div class="cms-sec" id="pack1b" style="position:relative;">
+
+          <!-- ── CALLOUTS ── -->
+          <div class="callout" id="co4_awb" style="top:4px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">AWB — Εικονίδια</div>
+              <span id="co4_awb_blue" style="display:block;transition:all .2s;">
+                👁️🔵 = <strong style="color:#60a5fa;">4Α Διπλό AWB Label</strong><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Εκτύπωση σε <strong style="color:#60a5fa;">Laser</strong> εκτυπωτή
+              </span>
+              <span id="co4_awb_red" style="display:block;margin-top:6px;transition:all .2s;">
+                🖨️🔴 = Thermal <strong style="color:#fca5a5;">Μικρό</strong>
+                <span style="display:inline-block;background:#cc1020;color:white;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;">10×10 cm</span>
+              </span>
+              <span id="co4_awb_orange" style="display:block;margin-top:6px;transition:all .2s;">
+                🖨️🟠 = Thermal <strong style="color:#fb923c;">Μεγάλο</strong>
+                <span style="display:inline-block;background:#ea580c;color:white;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;">17×10 cm</span>
+              </span>
+            </div>
+          </div>
+          <div class="callout" id="co4_book" style="top:20px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">📅 Booking Date</div>
+              Ημερομηνία <strong>δημιουργίας</strong><br>της αποστολής στο σύστημα
+            </div>
+          </div>
+          <div class="callout" id="co4_svc" style="top:30px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">🚀 Service</div>
+              Η επιλεγμένη υπηρεσία.<br>
+              <strong>Export Express</strong> = αερ. CY<br>
+              (επιλέγεται κατά το Booking)
+            </div>
+          </div>
+          <div class="callout" id="co4_orig" style="top:36px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">📍 Origin Station</div>
+              Ο σταθμός που είναι<br><strong>υπεύθυνος παρακολούθησης</strong><br>της αποστολής
+            </div>
+          </div>
+          <div class="callout" id="co4_zone" style="top:42px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">🗺️ Zone</div>
+              Ζώνη χώρας προορισμού.<br>Καθορίζεται αυτόματα<br>από το <strong>mapping χωρών</strong>
+            </div>
+          </div>
+          <div class="callout" id="co4_wt" style="top:50px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">⚡ Βάρη</div>
+              Actual: <strong>0.400 kg</strong><br>
+              Volumetric: <strong style="color:#7c3aed;">0.878 kg</strong><br>
+              Charged: <strong style="color:#fbbf24;">0.878</strong> (μεγαλύτερο)
+            </div>
+          </div>
+          <div class="callout" id="co4_client" style="top:56px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">💼 Client</div>
+              Ο λογαριασμός <strong>χρέωσης</strong>.<br>Εδώ χρεώνεται<br>η αποστολή.
+            </div>
+          </div>
+          <div class="callout" id="co4_ref" style="top:58px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">🔗 Ref No. — Αναφορά Πελάτη</div>
+              Ο πελάτης συνδέει την αποστολή<br>με <strong>τιμολόγιο</strong> ή <strong>δελτίο αποστολής</strong><br>για εσωτερική παρακολούθηση<br>πέρα από τον AWB αριθμό
+            </div>
+          </div>
+          <div class="callout" id="co4_pod" style="top:4px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">✍️ POD — Proof of Delivery</div>
+              Κατά την παράδοση ο παραλήπτης<br><strong>υπογράφει</strong> μέσω της<br>📱 <strong>Mobile App 4A</strong> (οδηγοί)<br>→ 👁️ = προβολή υπογραφής
+            </div>
+          </div>
+          <div class="callout" id="co4_con" style="top:62px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">📤 Consignor — Αποστολέας</div>
+              Πλήρη στοιχεία αποστολέα:<br>Επωνυμία, διεύθυνση,<br>τηλέφωνο
+            </div>
+          </div>
+          <div class="callout" id="co4_cee" style="bottom:40px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">📥 Consignee — Παραλήπτης</div>
+              Πλήρη στοιχεία παραλήπτη.<br>
+              ✏️ = Διόρθωση διεύθυνσης<br>→ <strong>νέα εκτύπωση AWB</strong>
+            </div>
+          </div>
+          <div class="callout" id="co4_kron" style="bottom:10px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">🤝 Contractor — KRONOS</div>
+              Συνεργάτης παράδοσης<br>όταν δεν παραδίδουμε εμείς.<br>
+              <span style="color:#f87171;">🔴 κόκκινο</span> = copy AWB σε contractor<br>
+              <span style="color:#60a5fa;">🔵 μπλε link</span> = tracking contractor
+            </div>
+          </div>
+          <div class="callout" id="co4_stat" style="top:4px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">✅ Packet Status</div>
+              <strong>DELIVERED</strong> = παραδόθηκε<br>
+              Ημερομηνία & ώρα παραλαβής<br>
+              Παραλήπτης: <strong>ARGYRIS</strong>
+            </div>
+          </div>
+          <div class="callout" id="co4_cod" style="top:30px;right:8px;">
+            <div class="callout-bubble left">
+              <div class="cb-title">💰 COD — Αντικαταβολή</div>
+              Cash: <strong>€75.00</strong><br>
+              TotalCOD: <strong>€75.00</strong><br>
+              → Ξεχωριστό module COD
+            </div>
+          </div>
+
+          <!-- ACTION BUTTONS — εκτός blur zone, πάντα κλικάρισιμα -->
+          <div style="padding:6px 10px;background:#f0f4ff;border-bottom:2px solid #dce4ff;display:flex;gap:6px;align-items:center;flex-wrap:wrap;position:relative;z-index:10;">
+            <span style="font-family:'Inconsolata',monospace;font-size:9px;color:#555;">Ενέργειες:</span>
+            <button id="btn_awbprint" onclick="openModal('modal_zebra')" style="padding:4px 10px;border:1.5px solid #2563eb;background:#2563eb;color:white;border-radius:4px;cursor:pointer;font-size:10px;font-weight:700;">👁️ AwbPrint</button>
+            <button id="btn_boxprint" onclick="openModal('modal_boxprint')" style="padding:4px 10px;border:1.5px solid #cc1020;background:#cc1020;color:white;border-radius:4px;cursor:pointer;font-size:10px;font-weight:700;">🖨️ BoxPrint 10cm</button>
+            <button id="btn_awbprint2" onclick="openModal('modal_awbprint')" style="padding:4px 10px;border:1.5px solid #ea580c;background:#ea580c;color:white;border-radius:4px;cursor:pointer;font-size:10px;font-weight:700;">🖨️ AwbPrint 170</button>
+            <button onclick="openModal('modal_edit')" style="padding:4px 10px;border:1.5px solid #7c3aed;background:#fdf4ff;color:#7c3aed;border-radius:4px;cursor:pointer;font-size:10px;font-weight:700;">✏️ Διόρθωση</button>
+            <button onclick="openModal('modal_copy')" style="padding:4px 10px;border:1.5px solid #cc1020;background:#fff5f5;color:#cc1020;border-radius:4px;cursor:pointer;font-size:10px;font-weight:700;">🔴 Contractor</button>
+            <button onclick="openModal('modal_pod')" style="padding:4px 10px;border:1.5px solid #15803d;background:#f0fdf4;color:#15803d;border-radius:4px;cursor:pointer;font-size:10px;font-weight:700;">✍️ POD</button>
+          </div>
+
+          <!-- ── FIELDS ── -->
+          <div class="cms-grid">
+            <div>
+              <div class="cms-row" id="r4_awb"><span class="cms-lbl">AwbNo</span><span class="cms-val r">●010790224862
+                <span style="font-size:12px;cursor:pointer;color:#2563eb;margin-left:4px;font-weight:700;" onclick="openModal('modal_zebra')" title="AWBNoLabelNew2">👁️</span>
+                <span style="font-size:12px;cursor:pointer;color:#cc1020;font-weight:700;" onclick="openModal('modal_boxprint')" title="BoxPrint Zebra 10cm">🖨️</span>
+                <span style="font-size:12px;cursor:pointer;color:#ea580c;font-weight:700;" onclick="openModal('modal_awbprint')" title="AwbPrint 170mm αντίτυπο">🖨️</span>
+              </span></div>
+              <div class="cms-row" id="r4_aawb"><span class="cms-lbl">Actual AwbNo.</span><span class="cms-val" style="color:#aaa;font-size:9px;">—</span></div>
+              <div class="cms-row" id="r4_book"><span class="cms-lbl">BookingDate</span><span class="cms-val">20-Mar-2026</span></div>
+              <div class="cms-row" id="r4_svc"><span class="cms-lbl">Service</span><span class="cms-val">Export Express</span></div>
+              <div class="cms-row" id="r4_orig"><span class="cms-lbl">Origin Station</span><span class="cms-val">SKY-4A EXPRESS ATH</span></div>
+              <div class="cms-row" id="r4_ori2"><span class="cms-lbl">Origin</span><span class="cms-val">ATHENS</span></div>
+              <div class="cms-row" id="r4_dest"><span class="cms-lbl">Destination</span><span class="cms-val">PAFOS</span></div>
+              <div class="cms-row" id="r4_zone"><span class="cms-lbl">Zone</span><span class="cms-val">Z9 : ZONE9</span></div>
+              <div class="cms-row" id="r4_pcs"><span class="cms-lbl">PCS</span><span class="cms-val">1</span></div>
+              <div class="cms-row" id="r4_wt"><span class="cms-lbl">Weight</span><span class="cms-val">0.400</span></div>
+              <div class="cms-row" id="r4_vw"><span class="cms-lbl">Vol Weight</span><span class="cms-val" style="color:#7c3aed;">0.878 Vol</span></div>
+              <div class="cms-row" id="r4_cw"><span class="cms-lbl">Charged Weight</span><span class="cms-val r">0.878</span></div>
+              <div class="cms-row" id="r4_cli"><span class="cms-lbl">Client</span><span class="cms-val">EVERSATIS OPTIMUM [30004761]</span></div>
+              <div class="cms-row" id="r4_ref"><span class="cms-lbl">Ref No.</span><span class="cms-val" style="color:#666;font-style:italic;">— (π.χ. ΤΙΜ-2026-0045)</span></div>
+              <div class="cms-row" id="r4_conor"><span class="cms-lbl">Consignor</span><span class="cms-val">EVERSATIS OPTIMUM<br>PYTHAGORA 81 KORIDALLOS<br>ATHENS-18120 GREECE<br><span style="color:#666;font-size:9px;">Mobile: 2150000580</span></span></div>
+              <div class="cms-row" id="r4_conee"><span class="cms-lbl">Consignee</span><span class="cms-val">ARGYRIS ALEXANDROPOULOS<br>Petrou Iliadi 12A, PAFOS<br>PAFOS-8220 CYPRUS<br><span style="color:#666;font-size:9px;">Mobile: 35799218501 <span onclick="openModal('modal_edit')" style="cursor:pointer;color:#2563eb;font-size:11px;" title="Διόρθωση διεύθυνσης">✏️</span></span></span></div>
+              <div class="cms-row" id="r4_kron"><span class="cms-lbl">ContractorName</span><span class="cms-val">KRONOS</span></div>
+              <div class="cms-row" id="r4_cref"><span class="cms-lbl">ContractorRefrence</span><span class="cms-val"><span style="color:#2563eb;text-decoration:underline;cursor:pointer;" onclick="openModal('modal_track')">PC60116651962-1</span> <span style="color:var(--red);font-size:11px;cursor:pointer;" onclick="openModal('modal_copy')" title="Copy AWB σε Contractor">🔴</span></span></div>
+            </div>
+            <div>
+              <div class="cms-row" id="r4_stat"><span class="cms-lbl">Packet Status</span><span class="cms-val g">DELIVERED ✅</span></div>
+              <div class="cms-row" id="r4_pod"><span class="cms-lbl">POD Image</span><span class="cms-val"><span style="color:#2563eb;cursor:pointer;" onclick="openModal('modal_pod')">👁️ Προβολή υπογραφής</span></span></div>
+              <div class="cms-row" id="r4_sig"><span class="cms-lbl">Signature</span><span class="cms-val" style="color:#666;font-size:9px;">✍️ Υπογραφή παραλήπτη</span></div>
+              <div class="cms-row" id="r4_sd"><span class="cms-lbl">Status Date</span><span class="cms-val">31-Mar-2026</span></div>
+              <div class="cms-row" id="r4_type"><span class="cms-lbl">ShipmentType</span><span class="cms-val o">COD</span></div>
+              <div class="cms-row" id="r4_cod"><span class="cms-lbl">CODCash</span><span class="cms-val r">75.00</span></div>
+              <div class="cms-row" id="r4_tot"><span class="cms-lbl">TotalCOD</span><span class="cms-val r">75.00</span></div>
+              <div class="cms-row" id="r4_rd"><span class="cms-lbl">Receiving Date</span><span class="cms-val">31-Mar-2026</span></div>
+              <div class="cms-row" id="r4_rec"><span class="cms-lbl">ReceiverName</span><span class="cms-val">ARGYRIS</span></div>
+              <div class="cms-row" id="r4_rt"><span class="cms-lbl">ReceivingTime</span><span class="cms-val">14:23</span></div>
+              <div class="cms-row" id="r4_cash"><span class="cms-lbl">Cash Transfer No.</span><span class="cms-val" style="color:#15803d;">●T010826160404</span></div>
+              <div class="cms-row" id="r4_bank"><span class="cms-lbl">Bank Transfer No.</span><span class="cms-val" style="color:#15803d;">●BT010826160401</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ann" id="a4">Πάτα <span class="hl">▶ Έναρξη</span> — Demo 1b: Guided tour κάθε πεδίου του Packet Details.</div>
+  </div>
+
+  <!-- DEMO 1c -->
+  <div class="section-hdr">Demo 1c — Tracking Log</div>
+  <div class="demo-wrap">
+    <div class="demo-hdr">
+      <div class="demo-hdr-title">🎬 Βήμα 3: Tracking Log <span class="demo-badge">Χρονολογική Ιστορία</span></div>
+      <div class="demo-ctrl">
+        <button class="dbtn rst" onclick="rst(5)">↺</button>
+        <button class="dbtn pause" id="bp5" onclick="togglePause(5)" style="display:none;">⏸</button>
+        <button class="dbtn play" id="b5" onclick="go(5)">▶ Έναρξη</button>
+      </div>
+    </div>
+    <div class="dprog"><div class="dprog-fill" id="p5"></div></div>
+    <div class="steps">
+      <div class="sp on" id="s5_1">1·ATH — Booking</div>
+      <div class="sp" id="s5_2">2·ATH — Dispatch</div>
+      <div class="sp" id="s5_3">3·NIC — Άφιξη</div>
+      <div class="sp" id="s5_4">4·NIC — OFD</div>
+      <div class="sp" id="s5_5">5·NIC — DELIVERED</div>
+    </div>
+    <div class="cms">
+      <div class="cms-top">
+        <div class="cms-logo">4A WORLDWIDE EXPRESS</div>
+        <div class="cms-bar"><span style="color:#bbb;">AWB: 010790224862</span></div>
+      </div>
+      <div class="cms-cnt" style="background:#f8f9fa;position:relative;">
+        <!-- CALLOUT: Log explanation -->
+        <div class="callout" id="co5_log" style="top:8px;right:8px;z-index:10;">
+          <div class="callout-bubble left">
+            <div class="cb-title" id="co5_title">📋 Ιχνηλασιμότητα</div>
+            <span id="co5_text">Κάθε γραμμή = 1 κίνηση<br>Σταθμός · Ενέργεια · Ώρα · <strong>Χρήστης</strong></span>
+          </div>
+        </div>
+        <div class="cms-pt">Tracking Log — AWB 010790224862</div>
+        <div class="tlog" style="background:white;margin:6px;border:1px solid #ddd;">
+          <div class="tlog-hdr"><span>ΣΤΑΘΜΟΣ</span><span>ΕΝΕΡΓΕΙΑ</span><span>ΗΜΕΡΟΜΗΝΙΑ</span><span>ΧΡΗΣΤΗΣ</span></div>
+          <div class="trow" id="tl1"><span class="ts">ATH</span><span>Packet Booked</span><span style="color:#666;font-family:monospace;">20-Mar 11:43</span><span style="color:#888;">EVERSATIS OPTIMUM</span></div>
+          <div class="trow" id="tl2"><span class="ts">ATH</span><span>Shipment Scanned at SKY-4A</span><span style="color:#666;font-family:monospace;">20-Mar 12:15</span><span style="color:#888;">ORFANIDIS A.</span></div>
+          <div class="trow" id="tl3"><span class="ts">ATH</span><span>Manifest Generated → PFO</span><span style="color:#666;font-family:monospace;">23-Mar 04:42</span><span style="color:#888;">EVA SAKKA</span></div>
+          <div class="trow" id="tl4"><span class="ts">ATH</span><span>Dispatch with Bag D26000449</span><span style="color:#666;font-family:monospace;">23-Mar 05:28</span><span style="color:#888;">STAVROS M.</span></div>
+          <div class="trow" id="tl5"><span class="ts">NIC</span><span>Arrived at 4AEXPRESS NIC</span><span style="color:#666;font-family:monospace;">31-Mar 09:05</span><span style="color:#888;">NIC STATION 1</span></div>
+          <div class="trow" id="tl6"><span class="ts">NIC</span><span>Out for Delivery (OFD)</span><span style="color:#666;font-family:monospace;">31-Mar 10:10</span><span style="color:#888;">NIC STATION 1</span></div>
+          <div class="trow" id="tl7" style="background:#f0fdf4;"><span class="ts" style="color:#15803d;">NIC</span><span style="color:#15803d;font-weight:700;">DELIVERED ✅</span><span style="color:#666;font-family:monospace;">31-Mar 14:23</span><span style="color:#888;">PANTELIS RIDER-CY</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="ann" id="a5">Πάτα <span class="hl">▶ Έναρξη</span> — Demo 1c: Παρακολούθηση κάθε κίνησης από ATH ως NIC.</div>
+  </div>
+
+  <!-- DEMO 2 -->
+  <div class="section-hdr">Demo 2 — Γρήγορη Αναζήτηση (Κόκκινη Μπάρα)</div>
+  <div class="demo-wrap">
+    <div class="demo-hdr">
+      <div class="demo-hdr-title">🎬 Enter AWB/Manifest/Challa <span class="demo-badge">Από παντού</span></div>
+      <div class="demo-ctrl">
+        <button class="dbtn rst" onclick="rst(2)">↺</button>
+        <button class="dbtn pause" id="bp2" onclick="togglePause(2)" style="display:none;">⏸</button>
+        <button class="dbtn play" id="b2" onclick="go(2)">▶ Έναρξη</button>
+      </div>
+    </div>
+    <div class="dprog"><div class="dprog-fill" id="p2"></div></div>
+    <div class="steps">
+      <div class="sp on" id="s2_1">1·Κόκκινη μπάρα</div>
+      <div class="sp" id="s2_2">2·Πληκτρολόγηση</div>
+      <div class="sp" id="s2_3">3·Enter → Αποτέλεσμα</div>
+    </div>
+    <div class="cms">
+      <div class="cms-top">
+        <div class="cms-logo">4A WORLDWIDE EXPRESS</div>
+        <div class="cms-bar" id="d2bar"><span id="d2ph" style="color:#bbb;">Enter Awb/Manifest/Challa</span><span id="d2txt" style="color:#333;font-weight:600;display:none;"></span><span class="cur h" id="d2cur"></span></div>
+        <div class="cms-tbns"><div class="cms-tbn">Chat(1)</div><div class="cms-tbn">Daily Rec.</div></div>
+      </div>
+      <div style="padding:16px;background:#f8f9fa;min-height:110px;display:flex;align-items:center;justify-content:center;position:relative;">
+        <div id="d2res" style="display:none;background:white;border:1px solid #ddd;border-radius:3px;padding:10px 14px;width:100%;max-width:440px;">
+          <div style="font-size:9px;color:#666;margin-bottom:5px;font-family:monospace;">Αποτέλεσμα αναζήτησης AWB 010790224862:</div>
+          <div style="display:grid;grid-template-columns:110px 1fr;gap:3px;font-size:10px;">
+            <span style="color:#666;">AWB No.</span><span style="color:var(--red);font-weight:700;">010790224862</span>
+            <span style="color:#666;">Status</span><span style="color:#15803d;font-weight:700;">DELIVERED ✅</span>
+            <span style="color:#666;">Consignor</span><span>EVERSATIS OPTIMUM</span>
+            <span style="color:#666;">Destination</span><span>PAFOS : PFO</span>
+          </div>
+        </div>
+        <div id="d2idle" style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;">Η κόκκινη μπάρα είναι διαθέσιμη<br>από ΠΑΝΤΟΥ στο CMS</div>
+      </div>
+    </div>
+    <div class="ann" id="a2">Πάτα <span class="hl">▶ Έναρξη</span> — γρήγορη αναζήτηση χωρίς να φύγεις από την τρέχουσα σελίδα.</div>
+  </div>
+
+  <!-- DEMO 3 -->
+  <div class="section-hdr">Demo 3 — Ενέργειες: Call / SMS / Refuse</div>
+  <div class="demo-wrap">
+    <div class="demo-hdr">
+      <div class="demo-hdr-title">🎬 Αδύνατο δέμα <span class="demo-badge">Σωστή σειρά ενεργειών</span></div>
+      <div class="demo-ctrl">
+        <button class="dbtn rst" onclick="rst(3)">↺</button>
+        <button class="dbtn pause" id="bp3" onclick="togglePause(3)" style="display:none;">⏸</button>
+        <button class="dbtn play" id="b3" onclick="go(3)">▶ Έναρξη</button>
+      </div>
+    </div>
+    <div class="dprog"><div class="dprog-fill" id="p3"></div></div>
+    <div class="steps">
+      <div class="sp on" id="s3_1">1·Αδύνατο δέμα</div>
+      <div class="sp" id="s3_2">2·SMS</div>
+      <div class="sp" id="s3_3">3·Call</div>
+      <div class="sp" id="s3_4">4·Refuse</div>
+    </div>
+    <div class="cms" style="position:relative;">
+      <div class="cms-top">
+        <div class="cms-logo">4A WORLDWIDE EXPRESS</div>
+        <div class="cms-bar"><span style="color:#bbb;">Enter Awb/Manifest/Challa</span></div>
+      </div>
+      <div class="cms-body">
+        <div class="cms-menu">
+          <div class="cms-mi hl">🔍 Query</div>
+          <div class="cms-ms hl">AWB No. Query</div>
+        </div>
+        <div class="cms-cnt">
+          <div class="cms-pt">Awb No Query — 010790224862</div>
+          <div style="padding:6px 10px;background:white;border-bottom:1px solid #eee;">
+            <div style="display:grid;grid-template-columns:110px 1fr;gap:2px;font-size:9px;">
+              <span style="color:#666;">Packet Status</span><span id="d3st" style="color:#f59e0b;font-weight:700;">UNDELIVERED ⚠️</span>
+              <span style="color:#666;">Παραλήπτης</span><span>ARGYRIS ALEXANDROPOULOS — Mobile: 35799218501</span>
+              <span style="color:#666;">ShipmentType</span><span style="color:#f59e0b;font-weight:600;">COD — €75.00</span>
+            </div>
+          </div>
+          <div class="cms-acts" style="position:relative;">
+            <span style="font-size:9px;color:#666;margin-right:3px;">Ενέργειες:</span>
+            <button class="act call" id="ac">📞 Call</button>
+            <button class="act sms" id="as">💬 SMS</button>
+            <button class="act ref" id="ar">🔴 Refuse</button>
+            <!-- Callouts for actions -->
+            <div class="callout" id="co_sms" style="top:-70px;left:60px;">
+              <div class="callout-bubble top">
+                <div class="cb-title">💬 Βήμα 1ο — ΠΑΝΤΑ ΠΡΩΤΑ</div>
+                Αυτόματο SMS στον παραλήπτη.<br>Ειδοποίηση χωρίς κόστος χρόνου.
+              </div>
+            </div>
+            <div class="callout" id="co_call" style="top:-70px;left:10px;">
+              <div class="callout-bubble top">
+                <div class="cb-title">📞 Βήμα 2ο — αν δεν απαντά</div>
+                Καταγράφεται στο<br><strong>Undelivered Report</strong>
+              </div>
+            </div>
+            <div class="callout" id="co_ref" style="top:-70px;left:110px;">
+              <div class="callout-bubble top">
+                <div class="cb-title">🔴 Βήμα 3ο — άρνηση COD</div>
+                Επιστροφή δέματος.<br>Καταγράφεται οριστικά.
+              </div>
+            </div>
+          </div>
+          <div id="dlog" style="padding:6px 10px;display:none;">
+            <div style="font-size:9px;font-weight:700;color:#555;margin-bottom:4px;">Καταγραφή:</div>
+            <div id="dlogi"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sms-pop" id="spop">📱 SMS στάλθηκε!<br><small>"Αγαπητέ πελάτη, έχετε αποστολή. Επικοινωνήστε μαζί μας."</small></div>
+    </div>
+    <div class="ann" id="a3">Πάτα <span class="hl">▶ Έναρξη</span> — δες τη σωστή σειρά ενεργειών για αδύνατο δέμα.</div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px;">
+    <button class="rbtn" onclick="goQuiz(document.querySelectorAll('.nav-tab')[1])">✏️ Πήγαινε στην Αξιολόγηση →</button>
+  </div>
+
+</div><!-- /training -->
+
+<!-- QUIZ -->
+<div class="section" id="quiz">
+  <div id="ngat" class="name-gate">
+    <div class="name-box">
+      <div class="gi">🔍</div>
+      <h2>Αξιολόγηση — Query</h2>
+      <p>Συμπλήρωσε το πλήρες ονοματεπώνυμό σου.</p>
+      <input class="ninp" id="ni" type="text" placeholder="Ονοματεπώνυμο..." maxlength="60" autocomplete="off" onkeydown="if(event.key==='Enter')startQ()">
+      <div class="nerr" id="ne"></div>
+      <button class="rbtn" style="width:100%;margin-top:6px;" onclick="startQ()">Έναρξη →</button>
+    </div>
+  </div>
+  <div id="qcont" style="display:none;">
+    <div class="quiz-hdr">
+      <div>
+        <h2>Αξιολόγηση — O05 Query</h2>
+        <p>12 ερωτήσεις · 3 επίπεδα · Οριστικές απαντήσεις</p>
+        <div class="exbadge">👤 <span id="exn">—</span></div>
+      </div>
+      <div class="qstats">
+        <div class="qstat"><span class="val" id="qa">0</span><span class="lbl">ΑΠΑΝΤΗΘΗΚΑΝ</span></div>
+        <div class="qstat"><span class="val" id="qc">0</span><span class="lbl">ΣΩΣΤΑ</span></div>
+        <div class="qstat"><span class="val">12</span><span class="lbl">ΣΥΝΟΛΟ</span></div>
+      </div>
+    </div>
+    <div id="qq">
+
+      <div class="qcard" data-answered="false" data-qid="1" data-level="b" data-text="Τι είναι το Query module">
+        <div class="qhdr"><span class="qn b">ΒΑΣΙΚΟ</span><div class="qt">Τι χρησιμοποιούμε το <strong>Query module</strong>;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,1)">Για νέες αποστολές</button>
+          <button class="ob" onclick="mcq(this,true,1)">Για αναζήτηση και παρακολούθηση αποστολών</button>
+          <button class="ob" onclick="mcq(this,false,1)">Για τιμολόγια</button>
+        </div>
+        <div class="fb" id="fb1"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="2" data-level="b" data-text="Τι είναι το Challa">
+        <div class="qhdr"><span class="qn b">ΒΑΣΙΚΟ</span><div class="qt">Τι είναι το <strong>Challa</strong> στην αναζήτηση;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,2)">Εσωτερικός κωδικός αποστολής</button>
+          <button class="ob" onclick="mcq(this,true,2)">Tracking number συνεργάτη (π.χ. DHL) που κάνει match με αποστολή</button>
+          <button class="ob" onclick="mcq(this,false,2)">Αριθμός τιμολογίου</button>
+        </div>
+        <div class="fb" id="fb2"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="3" data-level="b" data-text="Κόκκινη μπάρα — από πού λειτουργεί">
+        <div class="qhdr"><span class="qn b">ΒΑΣΙΚΟ</span><div class="qt">Η κόκκινη μπάρα <strong>"Enter AWB/Manifest/Challa"</strong> — από πού λειτουργεί;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,3)">Μόνο από το Query menu</button>
+          <button class="ob" onclick="mcq(this,true,3)">Από οποιαδήποτε σελίδα του CMS</button>
+          <button class="ob" onclick="mcq(this,false,3)">Μόνο από το Dashboard</button>
+        </div>
+        <div class="fb" id="fb3"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="4" data-level="b" data-text="OFD — τι σημαίνει">
+        <div class="qhdr"><span class="qn b">ΒΑΣΙΚΟ</span><div class="qt">Τι σημαίνει <strong>OFD</strong> στο Tracking Log;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,4)">Out of Deadline</button>
+          <button class="ob" onclick="mcq(this,true,4)">Out for Delivery — βγήκε για παράδοση</button>
+          <button class="ob" onclick="mcq(this,false,4)">Official Form Done</button>
+        </div>
+        <div class="fb" id="fb4"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="5" data-level="m" data-text="Κουμπί SMS — τι κάνει">
+        <div class="qhdr"><span class="qn m">ΜΕΣΑΙΟ</span><div class="qt">Τι κάνει το κουμπί <strong>SMS</strong>;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,5)">Στέλνει SMS στον αποστολέα</button>
+          <button class="ob" onclick="mcq(this,true,5)">Στέλνει αυτόματο SMS στον παραλήπτη — ειδοποίηση αποστολής και πρόσκληση επικοινωνίας</button>
+          <button class="ob" onclick="mcq(this,false,5)">Καταγράφει αποτυχημένη παράδοση</button>
+        </div>
+        <div class="fb" id="fb5"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="6" data-level="m" data-text="Κουμπί Call — τι καταγράφεται">
+        <div class="qhdr"><span class="qn m">ΜΕΣΑΙΟ</span><div class="qt">Πατώντας <strong>Call</strong> — τι καταγράφεται;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,6)">Τίποτα</button>
+          <button class="ob" onclick="mcq(this,true,6)">Η προσπάθεια επικοινωνίας στο Undelivered Report</button>
+          <button class="ob" onclick="mcq(this,false,6)">Η αποστολή επιστρέφει αυτόματα</button>
+        </div>
+        <div class="fb" id="fb6"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="7" data-level="m" data-text="Κουμπί Refuse — πότε">
+        <div class="qhdr"><span class="qn m">ΜΕΣΑΙΟ</span><div class="qt">Πότε πατάς <strong>Refuse</strong>;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,7)">Όταν το δέμα χαθεί</button>
+          <button class="ob" onclick="mcq(this,true,7)">Όταν ο παραλήπτης αρνηθεί παραλαβή — συχνά άρνηση COD</button>
+          <button class="ob" onclick="mcq(this,false,7)">Όταν η διεύθυνση είναι λάθος</button>
+        </div>
+        <div class="fb" id="fb7"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="8" data-level="m" data-text="Τι δείχνει το Tracking Log">
+        <div class="qhdr"><span class="qn m">ΜΕΣΑΙΟ</span><div class="qt">Τι δείχνει το <strong>Tracking Log</strong>;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,8)">Μόνο την τελευταία κατάσταση</button>
+          <button class="ob" onclick="mcq(this,true,8)">Χρονολογική ιστορία κάθε κίνησης με ώρα, σταθμό και χρήστη</button>
+          <button class="ob" onclick="mcq(this,false,8)">Τα οικονομικά στοιχεία μόνο</button>
+        </div>
+        <div class="fb" id="fb8"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="9" data-level="h" data-text="Σωστή σειρά ενεργειών αδύνατου δέματος">
+        <div class="qhdr"><span class="qn h">ΔΥΣΚΟΛΟ</span><div class="qt">Ποια είναι η <strong>σωστή σειρά</strong> για αδύνατο δέμα;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,9)">Refuse → Call → SMS</button>
+          <button class="ob" onclick="mcq(this,true,9)">SMS → Call (αν δεν απαντά) → Refuse (αν αρνηθεί)</button>
+          <button class="ob" onclick="mcq(this,false,9)">Call → SMS → Refuse</button>
+          <button class="ob" onclick="mcq(this,false,9)">Απευθείας Refuse</button>
+        </div>
+        <div class="fb" id="fb9"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="10" data-level="h" data-text="Αναζήτηση με DHL tracking number">
+        <div class="qhdr"><span class="qn h">ΔΥΣΚΟΛΟ</span><div class="qt">Πελάτης δίνει <strong>αριθμό DHL</strong>. Πώς βρίσκεις την αποστολή;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,10)">Δεν μπορώ — χρειάζομαι AWB</button>
+          <button class="ob" onclick="mcq(this,true,10)">Βάζω τον αριθμό DHL στο Challa field — το CMS κάνει match αυτόματα</button>
+          <button class="ob" onclick="mcq(this,false,10)">Τηλεφωνώ στη DHL</button>
+        </div>
+        <div class="fb" id="fb10"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="11" data-level="h" data-text="Charged Weight — Weight=0.400 Vol=0.878">
+        <div class="qhdr"><span class="qn h">ΔΥΣΚΟΛΟ</span><div class="qt">Βλέπεις: Weight=0.400, Vol Weight=0.878. Ποιο είναι το <strong>Charged Weight</strong>;</div></div>
+        <div class="opts">
+          <button class="ob" onclick="mcq(this,false,11)">0.400 — το φυσικό</button>
+          <button class="ob" onclick="mcq(this,true,11)">0.878 — το volumetric γιατί είναι μεγαλύτερο</button>
+          <button class="ob" onclick="mcq(this,false,11)">Μέσος όρος: 0.639</button>
+        </div>
+        <div class="fb" id="fb11"></div>
+      </div>
+
+      <div class="qcard" data-answered="false" data-qid="12" data-level="h" data-text="Tracking Log — ιχνηλασιμότητα χρήστη">
+        <div class="qhdr"><span class="qn h">ΔΥΣΚΟΛΟ</span><div class="qt">Σωστό ή Λάθος: Από το Tracking Log βλέπεις <strong>ποιος υπάλληλος</strong> σκάναρε το δέμα και πότε.</div></div>
+        <div class="tfo">
+          <button class="tb" onclick="tf(this,true,12)">✓ Σωστό</button>
+          <button class="tb" onclick="tf(this,false,12)">✗ Λάθος</button>
+        </div>
+        <div class="fb" id="fb12"></div>
+      </div>
+
+    </div>
+
+    <div class="sc-wrap" id="sc">
+      <div class="sc-circle"><div class="sc-num" id="scn">0</div><div class="sc-den">/ 12</div></div>
+      <div class="sc-title" id="sct">—</div>
+      <div class="sc-msg" id="scm">—</div>
+      <div class="sc-row">
+        <div class="sc-item cs"><span class="sv" id="scc">0</span><span class="sl">ΣΩΣΤΑ</span></div>
+        <div class="sc-item ws"><span class="sv" id="scw">0</span><span class="sl">ΛΑΘΗ</span></div>
+        <div class="sc-item ps"><span class="sv" id="scp">0%</span><span class="sl">ΠΟΣΟΣΤΟ</span></div>
+      </div>
+      <div class="wa" id="wa" style="display:none;"><h3>❌ Για επανάληψη:</h3><div id="wl"></div></div>
+      <div class="abtns">
+        <button class="rbtn" onclick="rstQ()">🔄 Ξαναπροσπάθεια</button>
+        <button class="sbtn" onclick="showSec('training',document.querySelectorAll('.nav-tab')[0])">📖 Επανάληψη</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ═══ MODAL OVERLAYS ═══ -->
+
+<!-- MODAL: Tracking -->
+<div class="modal-overlay" id="modal_track" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <div class="mh"><h3>🔵 PC60116651962-1 — Tracking KRONOS</h3><button class="mc" onclick="document.getElementById('modal_track').classList.remove('open')">✕</button></div>
+    <div class="mb">
+      <div style="background:#f5f5f5;padding:12px;border-radius:6px;">
+        <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Track Your AWB No.</div>
+        <div style="border:1px solid #ccc;padding:8px;background:white;font-family:monospace;margin-bottom:10px;">010790224862</div>
+        <table style="width:100%;border-collapse:collapse;font-size:10px;">
+          <thead>
+            <tr style="background:#cc1020;color:white;">
+              <th style="padding:5px 8px;text-align:left;">LOCATION</th>
+              <th style="padding:5px 8px;">SHIPMENT ACTIVITIES</th>
+              <th style="padding:5px 8px;">DATE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#fff;"><td style="padding:4px 8px;font-weight:700;">LIMASSOL</td><td style="padding:4px 8px;">SHIPMENT DELIVERED</td><td style="padding:4px 8px;font-family:monospace;">31-MAR-2026 10:59</td></tr>
+            <tr style="background:#f9f9f9;"><td style="padding:4px 8px;font-weight:700;">NICOSIA</td><td style="padding:4px 8px;">MANIFESTED TO KRONOS</td><td style="padding:4px 8px;font-family:monospace;">23-MAR-2026 11:12</td></tr>
+            <tr style="background:#fff;"><td style="padding:4px 8px;font-weight:700;">LARNACA</td><td style="padding:4px 8px;">IN TRANSIT TO NIC</td><td style="padding:4px 8px;font-family:monospace;">23-MAR-2026 09:05</td></tr>
+            <tr style="background:#f9f9f9;"><td style="padding:4px 8px;font-weight:700;">LARNACA</td><td style="padding:4px 8px;">SHIPMENT PICKED UP</td><td style="padding:4px 8px;font-family:monospace;">23-MAR-2026 08:56</td></tr>
+            <tr style="background:#fff;"><td style="padding:4px 8px;font-weight:700;">ATHENS</td><td style="padding:4px 8px;">IN TRANSIT TO LCA</td><td style="padding:4px 8px;font-family:monospace;">20-MAR-2026 17:48</td></tr>
+            <tr style="background:#f9f9f9;"><td style="padding:4px 8px;font-weight:700;">ATHENS</td><td style="padding:4px 8px;">SHIPMENT BOOKED</td><td style="padding:4px 8px;font-family:monospace;">20-MAR-2026 11:43</td></tr>
+          </tbody>
+        </table>
+        <div style="border:2px solid #333;padding:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-weight:800;font-size:14px;">LAST UPDATE ✓</div>
+          <div style="text-align:right;font-size:11px;"><strong>DELIVERED</strong><br>31-Mar-2026 14:23<br>Received By: <strong>ARGYRIS</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Zebra -->
+<div class="modal-overlay" id="modal_zebra" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:340px;width:95vw;">
+    <div class="mh" style="background:#333;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:11px;color:#aaa;font-family:monospace;">cms.4aexpress.com/Print/RDAWBPrint.aspx?AWBNo=010790224862&PickupID=0&Type=Booking</span>
+      </div>
+      <button class="mc" onclick="document.getElementById('modal_zebra').classList.remove('open')">✕</button>
+    </div>
+    <div style="background:#525659;padding:8px;display:flex;flex-direction:column;gap:6px;align-items:center;">
+      <div style="font-size:10px;color:#ccc;font-family:Arial;margin-bottom:-4px;">AWBNoLabelNew2 &nbsp;&nbsp; 1/1 &nbsp;&nbsp; 58%</div>
+
+      <!-- ══ COPY 1 ══ -->
+      <div style="background:white;width:290px;max-width:100%;padding:8px 10px;box-shadow:0 4px 12px rgba(0,0,0,.4);font-family:Arial,sans-serif;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1.5px solid #000;padding-bottom:8px;margin-bottom:8px;">
+          <!-- Logo + barcode -->
+          <div style="display:flex;align-items:flex-start;gap:6px;">
+            <div style="text-align:center;">
+              <div style="background:#cc1020;color:white;font-weight:900;font-size:22px;padding:2px 6px;line-height:1;font-family:Arial;">4A</div>
+              <div style="font-size:6px;color:#555;font-weight:700;letter-spacing:.5px;margin-top:1px;">WORLDWIDE<br>EXPRESS</div>
+            </div>
+            <div style="font-size:10px;letter-spacing:-1.5px;color:#000;margin-top:4px;line-height:1;">|||||||||||||||||||||||||||||||||||||||||||||</div>
+          </div>
+          <!-- Station info -->
+          <div style="text-align:right;font-size:7.5px;line-height:1.6;">
+            <strong style="font-size:9px;">SKY-4A EXPRESS ATH</strong><br>
+            GR Tel No. 00302109966661<br>
+            CY Tel No. 0035722953311<br>
+            For tracking please visit <span style="color:#cc1020;text-decoration:underline;">www.4aexpress.com</span>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;">
+          <!-- LEFT: addresses -->
+          <div style="flex:1;font-size:7.5px;line-height:1.7;">
+            <div style="font-size:8px;margin-bottom:2px;"><strong>010790224862</strong> &nbsp;&nbsp;&nbsp;&nbsp; 1 OF 1</div>
+            <div style="display:grid;grid-template-columns:60px 1fr;gap:2px;margin-bottom:4px;font-size:7px;color:#555;">
+              <span>DATE</span><span>20-Mar-2026</span>
+              <span>TYPE</span><span>NON DOCS</span>
+              <span>CONT</span><span>FOOD SUPPLEMENTS</span>
+              <span>WEIGHT</span><span>0.678 Kg.</span>
+              <span>Total Value</span><span>0.00 EUR</span>
+            </div>
+            <div><strong>FROM</strong></div>
+            <div>EVERSATIS OPTIMUM</div>
+            <div>PYTHAGORA 81 KORIDALLOS</div>
+            <div>ATHENS-18120</div>
+            <div>GREECE</div>
+            <div>Phone No. 2150000580</div>
+            <div style="margin-top:6px;"><strong>SHIP TO -</strong></div>
+            <div><strong>ARGYRIS ALEXANDROPOULOS</strong></div>
+            <div>Petrou Iliadi 12A</div>
+            <div>PAFOS</div>
+            <div>PAFOS-8220,CYPRUS</div>
+            <div>Phone No. 35799218501</div>
+            <div style="margin-top:10px;font-size:22px;font-weight:900;letter-spacing:2px;line-height:1;">PFO</div>
+            <div style="font-size:11px;letter-spacing:-1.5px;margin-top:4px;">||||||||||||||||||||||||||||||||||||||||||||</div>
+            <div style="font-size:7.5px;text-align:center;letter-spacing:2px;">010790224862-1</div>
+          </div>
+
+          <!-- RIGHT: service + barcode + COD -->
+          <div style="width:95px;border-left:1px solid #000;padding-left:6px;font-size:6.5px;">
+            <div style="font-size:11px;font-weight:800;font-style:italic;margin-bottom:2px;">Export Express</div>
+            <div style="font-size:7px;margin-bottom:8px;color:#444;">TRACK - CLIENT# EVERSATIS OPTIMUM : 30004761</div>
+            <div style="font-size:11px;letter-spacing:-1.5px;">||||||||||||||||||||||||||||||||||||||||||||</div>
+            <div style="font-size:7.5px;text-align:center;letter-spacing:2px;margin-bottom:10px;">010790224862-1</div>
+            <div style="display:flex;justify-content:space-between;font-size:7px;border-top:1px solid #ddd;padding-top:4px;margin-bottom:4px;">
+              <span>Paid By</span><span>Consignor</span>
+            </div>
+            <div style="text-align:right;font-size:8px;margin-bottom:10px;border-bottom:1px solid #ddd;padding-bottom:6px;">0.00</div>
+            <div style="font-size:7px;color:#aaa;letter-spacing:1px;margin-bottom:3px;">C.O.D SHIPMENT</div>
+            <div style="font-size:8px;line-height:1.8;">
+              CASH : <strong>75.00</strong><br>
+              CHEQUE : 0.00<br>
+              <strong>Total C.O.D : 75.00</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ COPY 2 ══ (ίδιο, ελαφρά διαφορετικό background) -->
+      <div style="background:#fafafa;width:290px;max-width:100%;padding:8px 10px;box-shadow:0 4px 12px rgba(0,0,0,.4);font-family:Arial,sans-serif;border-top:3px dashed #bbb;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1.5px solid #000;padding-bottom:8px;margin-bottom:8px;">
+          <div style="display:flex;align-items:flex-start;gap:6px;">
+            <div style="text-align:center;">
+              <div style="background:#cc1020;color:white;font-weight:900;font-size:22px;padding:2px 6px;line-height:1;font-family:Arial;">4A</div>
+              <div style="font-size:6px;color:#555;font-weight:700;letter-spacing:.5px;margin-top:1px;">WORLDWIDE<br>EXPRESS</div>
+            </div>
+            <div style="font-size:10px;letter-spacing:-1.5px;color:#000;margin-top:4px;line-height:1;">|||||||||||||||||||||||||||||||||||||||||||||</div>
+          </div>
+          <div style="text-align:right;font-size:7.5px;line-height:1.6;">
+            <strong style="font-size:9px;">SKY-4A EXPRESS ATH</strong><br>
+            GR Tel No. 00302109966661<br>
+            CY Tel No. 0035722953311<br>
+            For tracking please visit <span style="color:#cc1020;text-decoration:underline;">www.4aexpress.com</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;">
+          <div style="flex:1;font-size:7.5px;line-height:1.7;">
+            <div style="font-size:8px;margin-bottom:2px;"><strong>010790224862</strong> &nbsp;&nbsp;&nbsp;&nbsp; 1 OF 1</div>
+            <div style="display:grid;grid-template-columns:60px 1fr;gap:2px;margin-bottom:4px;font-size:7px;color:#555;">
+              <span>DATE</span><span>20-Mar-2026</span>
+              <span>TYPE</span><span>NON DOCS</span>
+              <span>CONT</span><span>FOOD SUPPLEMENTS</span>
+              <span>WEIGHT</span><span>0.678 Kg.</span>
+              <span>Total Value</span><span>0.00 EUR</span>
+            </div>
+            <div><strong>FROM</strong> EVERSATIS OPTIMUM, PYTHAGORA 81 KORIDALLOS, ATHENS-18120 GREECE, Phone 2150000580</div>
+            <div style="margin-top:4px;"><strong>SHIP TO -</strong> ARGYRIS ALEXANDROPOULOS, Petrou Iliadi 12A, PAFOS-8220,CYPRUS, Phone 35799218501</div>
+            <div style="margin-top:10px;font-size:22px;font-weight:900;letter-spacing:2px;line-height:1;">PFO</div>
+            <div style="font-size:11px;letter-spacing:-1.5px;margin-top:4px;">||||||||||||||||||||||||||||||||||||||||||||</div>
+            <div style="font-size:7.5px;text-align:center;letter-spacing:2px;">010790224862-1</div>
+          </div>
+          <div style="width:95px;border-left:1px solid #000;padding-left:6px;font-size:6.5px;">
+            <div style="font-size:11px;font-weight:800;font-style:italic;margin-bottom:2px;">Export Express</div>
+            <div style="font-size:7px;margin-bottom:8px;color:#444;">TRACK - CLIENT# EVERSATIS OPTIMUM : 30004761</div>
+            <div style="font-size:11px;letter-spacing:-1.5px;">||||||||||||||||||||||||||||||||||||||||||||</div>
+            <div style="font-size:7.5px;text-align:center;letter-spacing:2px;margin-bottom:10px;">010790224862-1</div>
+            <div style="display:flex;justify-content:space-between;font-size:7px;border-top:1px solid #ddd;padding-top:4px;margin-bottom:4px;">
+              <span>Paid By</span><span>Consignor</span>
+            </div>
+            <div style="text-align:right;font-size:8px;margin-bottom:10px;border-bottom:1px solid #ddd;padding-bottom:6px;">0.00</div>
+            <div style="font-size:7px;color:#aaa;letter-spacing:1px;margin-bottom:3px;">C.O.D SHIPMENT</div>
+            <div style="font-size:8px;line-height:1.8;">CASH : <strong>75.00</strong><br>CHEQUE : 0.00<br><strong>Total C.O.D : 75.00</strong></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit Address -->
+<div class="modal-overlay" id="modal_edit" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:340px;">
+    <div class="mh"><h3>✏️ Διόρθωση Διεύθυνσης Παραλήπτη</h3><button class="mc" onclick="document.getElementById('modal_edit').classList.remove('open')">✕</button></div>
+    <div class="mb">
+      <div style="font-size:11px;color:#666;background:#fff3cd;padding:8px;border-radius:6px;margin-bottom:12px;">
+        ⚠️ Η αλλαγή θα δημιουργήσει νέα εκτύπωση AWB στο Zebra.
+      </div>
+      <div style="margin-bottom:8px;"><label style="font-size:11px;font-weight:700;display:block;margin-bottom:3px;">Διεύθυνση</label><input value="Petrou Iliadi 12A" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+      <div style="margin-bottom:8px;"><label style="font-size:11px;font-weight:700;display:block;margin-bottom:3px;">Πόλη</label><input value="PAFOS" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+      <div style="margin-bottom:8px;"><label style="font-size:11px;font-weight:700;display:block;margin-bottom:3px;">Τ.Κ.</label><input value="PAFOS-8220" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+      <div style="margin-bottom:8px;"><label style="font-size:11px;font-weight:700;display:block;margin-bottom:3px;">Mobile</label><input value="35799218501" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button onclick="document.getElementById('modal_edit').classList.remove('open')" style="flex:1;padding:9px;background:#cc1020;color:white;border:none;border-radius:7px;font-weight:700;cursor:pointer;">💾 Αποθήκευση & Εκτύπωση</button>
+        <button onclick="document.getElementById('modal_edit').classList.remove('open')" style="padding:9px 14px;border:1px solid #ccc;border-radius:7px;background:white;cursor:pointer;">Ακύρωση</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Contractor Copy -->
+<div class="modal-overlay" id="modal_copy" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:320px;">
+    <div class="mh"><h3>🔴 Copy AWB — Contractor KRONOS</h3><button class="mc" onclick="document.getElementById('modal_copy').classList.remove('open')">✕</button></div>
+    <div class="mb" style="text-align:center;padding:24px;">
+      <div style="font-size:13px;color:#555;margin-bottom:10px;">Αντιγράφηκε στον συνεργάτη KRONOS:</div>
+      <div style="font-family:monospace;font-size:18px;font-weight:700;background:#f0f0f0;padding:8px 16px;border-radius:6px;display:inline-block;margin:8px 0;letter-spacing:2px;">PC60116651962-1</div>
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px;font-size:12px;color:#15803d;margin:12px 0;">
+        ✅ Ο KRONOS παρακολουθεί την αποστολή με αυτό τον κωδικό.
+      </div>
+      <button onclick="document.getElementById('modal_copy').classList.remove('open')" style="padding:9px 24px;background:#cc1020;color:white;border:none;border-radius:7px;font-weight:700;cursor:pointer;">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: POD Signature -->
+<div class="modal-overlay" id="modal_pod" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:340px;">
+    <div class="mh"><h3>✍️ POD — Proof of Delivery</h3><button class="mc" onclick="document.getElementById('modal_pod').classList.remove('open')">✕</button></div>
+    <div class="mb" style="text-align:center;">
+      <div style="font-size:11px;color:#555;margin-bottom:12px;">AWB: <strong>010790224862</strong> — Παρελήφθη από: <strong>ARGYRIS</strong></div>
+      <div style="border:2px solid #ddd;border-radius:8px;padding:20px;background:#fafafa;display:inline-block;">
+        <svg width="220" height="90" viewBox="0 0 220 90">
+          <path d="M15,70 C25,25 48,60 72,42 C96,24 105,58 132,46 C152,37 165,65 200,52" fill="none" stroke="#1a1208" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M18,75 C60,73 170,73 202,75" fill="none" stroke="#1a1208" stroke-width="1" stroke-dasharray="3,2"/>
+        </svg>
+        <div style="font-size:9px;color:#888;margin-top:4px;">Υπογραφή παραλήπτη</div>
+      </div>
+      <div style="margin-top:12px;font-size:10px;color:#666;background:#f8f8f8;padding:10px;border-radius:6px;">
+        📱 Καταγράφηκε μέσω <strong>Mobile App 4A</strong><br>
+        ⏰ 31-Mar-2026 14:23 | Οδηγός: <strong>PANTELIS</strong>
+      </div>
+      <button onclick="document.getElementById('modal_pod').classList.remove('open')" style="margin-top:12px;padding:8px 20px;background:#cc1020;color:white;border:none;border-radius:7px;font-weight:700;cursor:pointer;">Κλείσιμο</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: AwbPrint — Label 170mm -->
+<div class="modal-overlay" id="modal_awbprint" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:380px;width:95vw;">
+    <div class="mh" style="background:#333;">
+      <span style="font-size:10px;color:#aaa;font-family:monospace;">cms.4aexpress.com/Print/RDAWBPrint.aspx?AWBNo=010790224862&PickupID=0&Type=AwbPrint</span>
+      <button class="mc" onclick="document.getElementById('modal_awbprint').classList.remove('open')">✕</button>
+    </div>
+    <div style="background:#525659;padding:10px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div style="font-size:9px;color:#ccc;font-family:Arial;margin-bottom:2px;">AwbPrint &nbsp; 1/1 &nbsp; 80%</div>
+
+      <!-- Label 170mm wide -->
+      <div style="background:white;width:280px;min-height:476px;padding:10px 12px;box-shadow:0 4px 16px rgba(0,0,0,.5);font-family:Arial,sans-serif;font-size:7.5px;box-sizing:border-box;">
+
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1.5px solid #000;padding-bottom:6px;margin-bottom:6px;">
+          <div style="display:flex;align-items:flex-start;gap:5px;">
+            <div>
+              <div style="background:#cc1020;color:white;font-weight:900;font-size:20px;padding:2px 5px;line-height:1;">4A</div>
+              <div style="font-size:5.5px;color:#555;font-weight:700;text-align:center;margin-top:1px;">WORLDWIDE<br>EXPRESS</div>
+            </div>
+          </div>
+          <div style="text-align:right;font-size:6.5px;line-height:1.6;">
+            <strong style="font-size:8px;">SKY-4A EXPRESS ATH</strong><br>
+            GR Tel No.00302109966661<br>
+            CY Tel No.0035722953311<br>
+            For tracking please visit <span style="color:#cc1020;">www.4aexpress.com</span>
+          </div>
+        </div>
+
+        <!-- Top barcode -->
+        <div style="text-align:center;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:6px;">
+          <div style="font-size:9px;letter-spacing:-1.2px;">||||||||||||||||||||||||||||||||||||||||||||||||||||||</div>
+          <div style="font-size:7px;font-weight:700;letter-spacing:2px;">010790224862</div>
+          <div style="font-size:6px;color:#555;">1 OF 1</div>
+        </div>
+
+        <!-- Date / Type / Weight row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:2px;font-size:6px;margin-bottom:6px;border-bottom:1px solid #eee;padding-bottom:5px;">
+          <div><span style="color:#777;">DATE</span><br><strong>20-Mar-2026</strong></div>
+          <div><span style="color:#777;">TYPE</span><br><strong>NON DOCS</strong></div>
+          <div><span style="color:#777;">WEIGHT</span><br><strong>0.678 Kg.</strong></div>
+          <div><span style="color:#777;">INSUR</span><br><strong>—</strong></div>
+          <div style="grid-column:1/3;"><span style="color:#777;">CONTENT</span> FOOD SUPPLEMENTS</div>
+          <div style="grid-column:3/5;"><span style="color:#777;">TOTAL VALUE</span> 0.00 EUR</div>
+        </div>
+
+        <!-- From -->
+        <div style="margin-bottom:5px;border-bottom:1px solid #eee;padding-bottom:5px;line-height:1.7;">
+          <strong>FROM</strong><br>
+          EVERSATIS OPTIMUM<br>
+          PYTHAGORA 81 KORIDALLOS,KORIDALLOS,ATHENS-18120,GREECE<br>
+          Phone No .2150000580
+        </div>
+
+        <!-- Ship To -->
+        <div style="margin-bottom:6px;border-bottom:1px solid #eee;padding-bottom:5px;line-height:1.7;">
+          <strong>SHIP TO -</strong><br>
+          <strong>ARGYRIS ALEXANDROPOULOS</strong><br>
+          Petrou Iliadi 12A<br>
+          PAFOS,PAFOS-8220,CYPRUS<br>
+          Phone No. 35799218501
+        </div>
+
+        <!-- PFO + Service -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;border-bottom:1px solid #000;padding-bottom:5px;">
+          <div style="font-size:26px;font-weight:900;letter-spacing:2px;">PFO</div>
+          <div style="font-size:14px;font-weight:800;font-style:italic;">Export Express</div>
+        </div>
+
+        <!-- Bottom barcode -->
+        <div style="text-align:center;margin-bottom:4px;">
+          <div style="font-size:9px;letter-spacing:-1.2px;">||||||||||||||||||||||||||||||||||||||||||||||||||||||</div>
+          <div style="font-size:7px;font-weight:700;letter-spacing:1.5px;">010790224862-1</div>
+        </div>
+
+        <!-- Track -->
+        <div style="font-size:6px;color:#555;text-align:center;margin-bottom:5px;border-top:1px solid #eee;padding-top:3px;">
+          TRACK - CLIENT# EVERSATIS OPTIMUM : 30004761
+        </div>
+
+        <!-- Paid By + COD -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-top:1px solid #000;padding-top:5px;font-size:6.5px;">
+          <div style="line-height:1.8;">
+            <div>Paid By &nbsp;&nbsp;&nbsp; Consignor</div>
+            <div>Insurance</div>
+            <div><strong>Total &nbsp;&nbsp;&nbsp;&nbsp; 0.00</strong></div>
+          </div>
+          <div style="border:1px solid #000;padding:4px 8px;font-size:6.5px;">
+            <div style="font-size:6px;color:#777;letter-spacing:.5px;margin-bottom:2px;">C.O.D SHIPMENT</div>
+            <div>CASH : <strong>75.00</strong></div>
+            <div>CHEQUE : 0.00</div>
+            <div><strong>Total C.O.D : 75.00</strong></div>
+          </div>
+        </div>
+
+      </div>
+      <div style="font-size:9px;color:#ccc;margin-top:4px;">Zebra Thermal <span style="background:#ea580c;color:white;padding:1px 6px;border-radius:3px;font-weight:700;">17 × 10 cm</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: BoxPrint — Zebra Thermal 10×10cm -->
+<div class="modal-overlay" id="modal_boxprint" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:400px;width:95vw;">
+    <div class="mh" style="background:#333;">
+      <span style="font-size:10px;color:#aaa;font-family:monospace;">cms.4aexpress.com/Print/RDAWBPrint.aspx?AWBNo=010790224862&Type=BoxPrint</span>
+      <button class="mc" onclick="document.getElementById('modal_boxprint').classList.remove('open')">✕</button>
+    </div>
+    <div style="background:#525659;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div style="font-size:9px;color:#ccc;font-family:Arial;margin-bottom:2px;">BoxPrint &nbsp; 1/1 &nbsp; 100%</div>
+
+      <!-- Zebra Label 10×10cm -->
+      <div style="background:white;width:280px;height:280px;padding:10px;box-shadow:0 4px 16px rgba(0,0,0,.5);font-family:Arial,sans-serif;display:flex;flex-direction:column;box-sizing:border-box;border:1px solid #ddd;">
+
+        <!-- Header: Logo + Station -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1.5px solid #000;padding-bottom:5px;margin-bottom:5px;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div>
+              <div style="background:#cc1020;color:white;font-weight:900;font-size:16px;padding:1px 4px;line-height:1;">4A</div>
+              <div style="font-size:5px;color:#555;font-weight:700;letter-spacing:.3px;text-align:center;">WORLDWIDE<br>EXPRESS</div>
+            </div>
+            <div style="font-size:7px;letter-spacing:-1px;color:#000;line-height:1;">|||||||||||||||||||||||||||||</div>
+          </div>
+          <div style="text-align:right;font-size:6px;line-height:1.5;">
+            <strong style="font-size:7px;">SKY-4A EXPRESS ATH</strong><br>
+            GR Tel No.00302109966661<br>
+            CY Tel No.0035722953311<br>
+            <span style="color:#cc1020;">www.4aexpress.com</span>
+          </div>
+        </div>
+
+        <!-- AWB + Service row -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div style="font-size:7px;font-weight:700;letter-spacing:.5px;">010790224862</div>
+          <div style="font-size:11px;font-weight:900;font-style:italic;">Export Express</div>
+          <div style="font-size:11px;font-weight:900;letter-spacing:1px;">PFO</div>
+        </div>
+        <div style="font-size:6px;color:#333;display:flex;gap:8px;margin-bottom:4px;">
+          <span>Date 20-Mar-2026</span>
+          <span>NON DOCS</span>
+          <span>Contents FOOD SUPPLEMEN</span>
+        </div>
+        <div style="font-size:6px;color:#333;margin-bottom:5px;">
+          Weight 0.678 Kg. &nbsp; Insur &nbsp;&nbsp;&nbsp; Total Val 0.00 EUR
+        </div>
+
+        <!-- From / Ship To -->
+        <div style="font-size:6px;line-height:1.6;margin-bottom:5px;border-bottom:1px solid #eee;padding-bottom:4px;">
+          <strong>From</strong> , EVERSATIS OPTIMUM<br>
+          PYTHAGORA 81 KORIDALLOS,KORIDALLOS,ATHENS-18120,GREECE<br>
+          Phone No. 2150000580<br>
+          <strong>SHIP TO - ARGYRIS ALEXANDROPOULOS</strong><br>
+          Petrou Iliadi 12A<br>
+          PAFOS,PAFOS-8220,CYPRUS<br>
+          Phone No. 35799218501
+        </div>
+
+        <!-- Barcode area -->
+        <div style="text-align:center;margin-bottom:3px;">
+          <div style="font-size:9px;letter-spacing:-1.2px;line-height:1;">|||||||||||||||||||||||||||||||||||||||||||||||||</div>
+          <div style="font-size:6.5px;letter-spacing:2px;font-weight:700;">010790224862-1</div>
+        </div>
+
+        <!-- Track + COD -->
+        <div style="font-size:6px;color:#555;text-align:center;margin-bottom:4px;border-top:1px solid #eee;padding-top:3px;">
+          Track-Client#eversatis optimum : 30004761
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:6px;border-top:1px solid #000;padding-top:3px;">
+          <div>
+            <div>Paid By &nbsp;&nbsp; Consignor</div>
+            <div>Insurance</div>
+            <div><strong>Total &nbsp;&nbsp; 0.00</strong></div>
+          </div>
+          <div style="border:1px solid #000;padding:3px 6px;font-size:6px;">
+            <div style="font-size:5.5px;color:#777;letter-spacing:.5px;">C.O.D Shipment</div>
+            <div>Cash : 75.00</div>
+            <div>Cheque : 0.00</div>
+            <div><strong>Total COD : 75.00</strong></div>
+          </div>
+        </div>
+
+      </div>
+      <div style="font-size:9px;color:#ccc;margin-top:4px;">Zebra Thermal <span style="background:#cc1020;color:white;padding:1px 6px;border-radius:3px;font-weight:700;">10 × 10 cm</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ STATE ══
+let dspd={1:1,2:1,3:1,4:1,5:1},dplay={1:false,2:false,3:false,4:false,5:false},dto={1:[],2:[],3:[],4:[],5:[]};
+let dpaused={1:false,2:false,3:false,4:false,5:false};
+
+// dly: polls every 80ms, freezes on pause, resumes when unpaused
+function dly(ms,id){
+  return new Promise(r=>{
+    const total=ms/dspd[id];
+    let elapsed=0;
+    const TICK=80;
+    const tick=()=>{
+      if(!dplay[id]){r();return;}
+      if(dpaused[id]){
+        // frozen — check again in 80ms without advancing elapsed
+        const t=setTimeout(tick,TICK);dto[id].push(t);
+        return;
+      }
+      elapsed+=TICK;
+      if(elapsed>=total){r();return;}
+      const t=setTimeout(tick,TICK);dto[id].push(t);
+    };
+    const t=setTimeout(tick,TICK);dto[id].push(t);
+  });
+}
+
+function togglePause(id){
+  const bp=document.getElementById('bp'+id);
+  const a=document.getElementById('a'+id);
+  dpaused[id]=!dpaused[id];  // απλό flip
+  if(dpaused[id]){
+    bp.textContent='▶ Συνέχεια';
+    bp.classList.remove('pause');bp.classList.add('resume');
+    if(a){a.dataset.prev=a.innerHTML;a.innerHTML='⏸ <span class="hl">Παύση</span> — Πάτα <span class="hl" style="color:#22c55e;">▶ Συνέχεια</span> για να συνεχίσεις.';}
+  } else {
+    bp.textContent='⏸';
+    bp.classList.remove('resume');bp.classList.add('pause');
+    if(a&&a.dataset.prev)a.innerHTML=a.dataset.prev;
+  }
+}
+
+function spd(id,s,btn){dspd[id]=s;document.querySelectorAll(`#s${id}a,#s${id}b,#s${id}c`).forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+
+function setS(id,cur,tot){
+  for(let i=1;i<=tot;i++){
+    const el=document.getElementById(`s${id}_${i}`);
+    if(!el)continue;
+    el.className='sp'+(i<cur?' done':i===cur?' on':'');
+  }
+  const prog=document.getElementById(`p${id}`);
+  if(prog)prog.style.width=((cur-1)/tot*100)+'%';
+}
+
+function spotlight(secId,rowId,cls='spotlight'){
+  const sec=document.getElementById(secId);
+  if(!sec)return;
+  sec.querySelectorAll('.cms-row').forEach(r=>r.classList.remove('spotlight','spotlight-green','spotlight-blue'));
+  sec.classList.add('blur-mode');
+  const row=document.getElementById(rowId);
+  if(row)row.classList.add(cls);
+}
+
+function clearBlur(secId){
+  const sec=document.getElementById(secId);
+  if(!sec)return;
+  sec.classList.remove('blur-mode');
+  sec.querySelectorAll('.cms-row').forEach(r=>r.classList.remove('spotlight','spotlight-green','spotlight-blue'));
+}
+
+function go(id){
+  if(dplay[id])return;
+  dplay[id]=true;
+  dpaused[id]=false;  // σίγουρα false στην έναρξη
+  const b=document.getElementById('b'+id);
+  b.textContent='⏸ Παίζει...';b.disabled=true;b.onclick=null;
+  const bp=document.getElementById('bp'+id);
+  if(bp){bp.style.display='inline-block';bp.textContent='⏸';bp.classList.remove('resume');bp.classList.add('pause');}
+  if(id===1)d1();if(id===2)d2();if(id===3)d3();if(id===4)d4();if(id===5)d5();
+}
+
+function rst(id){
+  dto[id].forEach(t=>clearTimeout(t));dto[id]=[];
+  dplay[id]=false;dpaused[id]=false;
+  const prog=document.getElementById('p'+id);if(prog)prog.style.width='0%';
+  const b=document.getElementById('b'+id);
+  if(b){b.textContent='▶ Έναρξη';b.disabled=false;b.style.background='';b.onclick=function(){go(id)};}
+  const bp=document.getElementById('bp'+id);
+  if(bp){bp.style.display='none';bp.textContent='⏸';bp.classList.remove('resume');bp.classList.add('pause');}
+  if(id===1)r1();if(id===2)r2();if(id===3)r3();if(id===4)r4();if(id===5)r5();
+}
+
+function showPS(){document.getElementById('pspopup').style.display=document.getElementById('pspopup').style.display==='none'?'block':'none';}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// Αναλαμπές σε στοιχείο πριν ανοίξει popup
+async function blinkEl(el, times=3, id=4, hideIds=[], showIds=[]){
+  hideIds.forEach(i=>{const e=document.getElementById(i);if(e)e.style.display='none';});
+  showIds.forEach(i=>{const e=document.getElementById(i);if(e)e.style.display='block';});
+  for(let i=0;i<times;i++){
+    el.style.animation='btnBlink .35s ease';
+    await dly(380,id);
+    el.style.animation='';
+    await dly(100,id);
+  }
+  // ΔΕΝ επαναφέρουμε εδώ — παραμένει η μοναδική γραμμή ορατή μέχρι να κλείσει το popup
+}
+
+// ── DEMO 1a ──
+function r1(){
+  const inp=document.getElementById('awbinp');if(inp)inp.value='';
+  const sbtn=document.getElementById('sbtn1');if(sbtn)sbtn.style.opacity='.4';
+  const res=document.getElementById('res1');if(res)res.style.display='none';
+  const pick=document.getElementById('pick1');if(pick)pick.style.display='none';
+  const psp=document.getElementById('pspopup');if(psp){psp.style.display='none';psp.style.filter='';psp.style.opacity='';}
+  const tu=document.getElementById('trackurl');if(tu)tu.style.display='none';
+  clearBlur('pick1');
+  const ps=document.getElementById('pstatus');if(ps){ps.textContent='Booked';ps.style.cssText='color:#5b7fa6;font-weight:700;background:#dce8f5;padding:2px 6px;border-radius:3px;';}
+  ['co_status','co_ps','co_url'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('show');});
+  setS(1,1,6);
+  const a=document.getElementById('a1');if(a)a.innerHTML='Πάτα <span class="hl">▶ Έναρξη</span> — Demo 1a: Αναζήτηση AWB και ανάλυση Pickup Details.';
+}
+
+async function d1(){
+  const awb='010790224862';
+  ['co_status','co_ps','co_url'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('show');});
+
+  setS(1,1,6);document.getElementById('a1').innerHTML='Βήμα 1: Πηγαίνουμε στο <span class="hl">Query → AWB No. Query</span> από το menu.';
+  await dly(3200,1);
+
+  setS(1,2,6);document.getElementById('a1').innerHTML='Βήμα 2: Πληκτρολογούμε τον <span class="hl">AWB αριθμό</span> — 010790224862.';
+  const inp=document.getElementById('awbinp');inp.className='cms-inp typ';
+  for(let i=0;i<awb.length;i++){inp.value=awb.slice(0,i+1);await dly(110,1);}
+  inp.className='cms-inp fil';document.getElementById('sbtn1').style.opacity='1';
+  await dly(1400,1);
+
+  setS(1,3,6);document.getElementById('a1').innerHTML='Βήμα 3: Πατάμε <span class="hl">🔍 Search</span>.';
+  const sb=document.getElementById('sbtn1');
+  // Αναλαμπές στο Search κουμπί
+  await blinkEl(sb,3,1);
+  // Κλικ effect
+  sb.style.background='#8b0a14';await dly(300,1);sb.style.background='var(--red)';await dly(1200,1);
+
+  setS(1,4,6);document.getElementById('a1').innerHTML='Βήμα 4: <span class="hl">Pickup Details</span> — το <strong>PickupStatus</strong> αλλάζει αυτόματα.';
+  document.getElementById('res1').style.display='block';document.getElementById('pick1').style.display='block';
+  await dly(1400,1);
+  spotlight('pick1','row_status','spotlight');
+  document.getElementById('co_status').classList.add('show');
+  const states=[
+    ['Pending For PickupSheet','color:#6b21a8;font-weight:700;background:#ede9fe;padding:2px 6px;border-radius:3px;'],
+    ['PickupSheet Generated','color:#854d0e;font-weight:700;background:#fef9c3;padding:2px 6px;border-radius:3px;'],
+    ['Picked Up ✅','color:#155724;font-weight:700;background:#c3e6cb;padding:2px 6px;border-radius:3px;'],
+    ['Booked','color:#5b7fa6;font-weight:700;background:#dce8f5;padding:2px 6px;border-radius:3px;'],
+  ];
+  for(const [txt,css] of states){
+    document.getElementById('pstatus').textContent=txt;
+    document.getElementById('pstatus').style.cssText=css;
+    await dly(2800,1);
+  }
+  clearBlur('pick1');document.getElementById('co_status').classList.remove('show');
+
+  setS(1,5,6);document.getElementById('a1').innerHTML='Βήμα 5: Κλικ στο <span class="hl">●PS56650</span> → βλέπεις τις αποστολές του οδηγού αυτή την ημέρα.';
+  spotlight('pick1','row_ps','spotlight-blue');
+  document.getElementById('co_ps').classList.add('show');
+  document.getElementById('pslink').style.background='#fef3c7';
+  await dly(1600,1);
+  document.getElementById('pspopup').style.display='block';
+  await dly(4400,1);
+  clearBlur('pick1');document.getElementById('co_ps').classList.remove('show');
+  document.getElementById('pspopup').style.filter='blur(3px)';document.getElementById('pspopup').style.opacity='0.3';
+  await dly(600,1);
+
+  setS(1,6,6);document.getElementById('a1').innerHTML='Βήμα 6: <span class="hl">Tracking URL</span> — <kbd>Ctrl+C</kbd> και στέλνεις email σε αποστολέα + παραλήπτη → live tracking!';
+  spotlight('pick1','row_url','spotlight-green');
+  document.getElementById('trackurl').style.display='block';
+  document.getElementById('co_url').classList.add('show');
+  await dly(4000,1);
+  clearBlur('pick1');
+  document.getElementById('pspopup').style.filter='';document.getElementById('pspopup').style.opacity='';
+
+  document.getElementById('p1').style.width='100%';
+  document.getElementById('a1').innerHTML='🎉 <span class="hl">Demo 1a ολοκληρώθηκε!</span> Συνέχισε με Demo 1b → Packet Details.';
+  const b=document.getElementById('b1');b.textContent='↺ Επανεκκίνηση';b.style.background='#15803d';b.disabled=false;b.onclick=function(){rst(1)};const bp1=document.getElementById('bp1');if(bp1){bp1.style.display='none';}
+}
+
+// ── DEMO 1b ──
+function r4(){
+  ['co4_awb','co4_book','co4_svc','co4_orig','co4_zone','co4_wt','co4_client','co4_ref','co4_con','co4_cee','co4_kron','co4_stat','co4_pod','co4_cod'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('show');});
+  clearBlur('pack1b');
+  setS(4,1,10);
+  const a=document.getElementById('a4');if(a)a.innerHTML='Πάτα <span class="hl">▶ Έναρξη</span> — Demo 1b: Guided tour κάθε πεδίου του Packet Details.';
+}
+
+async function d4(){
+  const sec='pack1b';
+  const clr=()=>document.getElementById(sec).querySelectorAll('.cms-row').forEach(r=>r.classList.remove('spotlight','spotlight-green','spotlight-blue'));
+  ['co4_awb','co4_book','co4_svc','co4_orig','co4_zone','co4_wt','co4_client','co4_ref','co4_con','co4_cee','co4_kron','co4_stat','co4_pod','co4_cod'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('show');});
+
+  setS(4,1,10);document.getElementById('a4').innerHTML='<span class="hl">AwbNo</span> — 👁️🔵 = AwbPrint 170mm, 🖨️🔴 = BoxPrint Zebra 10cm, 🖨️🟠 = AwbPrint αντίτυπο.';
+  spotlight(sec,'r4_awb','spotlight');document.getElementById('co4_awb').classList.add('show');
+  await dly(3000,4);
+
+  // 👁️🔵 → 4Α Διπλό AWB Label Laser — φαίνεται ΜΟΝΟ μπλε γραμμή
+  document.getElementById('a4').innerHTML='<span class="hl">👁️🔵 4Α Διπλό AWB Label</span> — εκτύπωση σε <strong>Laser</strong> εκτυπωτή. Δύο αντίτυπα A4.';
+  const b1=document.getElementById('btn_awbprint');
+  if(b1) await blinkEl(b1,3,4,['co4_awb_red','co4_awb_orange'],['co4_awb_blue']);
+  document.getElementById('modal_zebra').classList.add('open');
+  await dly(7000,4);
+  document.getElementById('modal_zebra').classList.remove('open');
+  // Επαναφορά ΜΕΤΑ το κλείσιμο
+  ['co4_awb_red','co4_awb_orange'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.display='block';});
+  await dly(800,4);
+
+  // 🖨️🔴 → BoxPrint Zebra 10cm — φαίνεται ΜΟΝΟ κόκκινη γραμμή
+  document.getElementById('a4').innerHTML='<span class="hl">🖨️🔴 BoxPrint 10cm</span> — label 10×10cm στον θερμικό Zebra εκτυπωτή.';
+  const b2=document.getElementById('btn_boxprint');
+  if(b2) await blinkEl(b2,3,4,['co4_awb_blue','co4_awb_orange'],['co4_awb_red']);
+  document.getElementById('modal_boxprint').classList.add('open');
+  await dly(7000,4);
+  document.getElementById('modal_boxprint').classList.remove('open');
+  // Επαναφορά ΜΕΤΑ το κλείσιμο
+  ['co4_awb_blue','co4_awb_orange'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.display='block';});
+  await dly(800,4);
+
+  // 🖨️🟠 → AwbPrint 170mm αντίτυπο — αναλαμπές στο πορτοκαλί κουμπί
+  document.getElementById('a4').innerHTML='<span class="hl">🖨️🟠 AwbPrint 170</span> — αντίτυπο label 170mm για αρχείο.';
+  const b3=document.getElementById('btn_awbprint2');
+  if(b3) await blinkEl(b3,3,4,['co4_awb_blue','co4_awb_red'],['co4_awb_orange']);
+  document.getElementById('modal_awbprint').classList.add('open');
+  await dly(7000,4);
+  document.getElementById('modal_awbprint').classList.remove('open');
+  // Επαναφορά ΜΕΤΑ το κλείσιμο — όλες οι γραμμές
+  ['co4_awb_blue','co4_awb_red','co4_awb_orange'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.display='block';});
+  await dly(600,4);
+  clearBlur(sec);document.getElementById('co4_awb').classList.remove('show');
+
+  setS(4,2,10);document.getElementById('a4').innerHTML='<span class="hl">BookingDate</span> = ημερομηνία δημιουργίας. <span class="hl">Service = Export Express</span> — υπηρεσία που επιλέχθηκε.';
+  spotlight(sec,'r4_book','spotlight');document.getElementById('co4_book').classList.add('show');
+  await dly(8400,4);document.getElementById('co4_book').classList.remove('show');clr();
+  document.getElementById('r4_svc').classList.add('spotlight');document.getElementById('co4_svc').classList.add('show');
+  await dly(9600,4);clearBlur(sec);document.getElementById('co4_svc').classList.remove('show');
+
+  setS(4,3,10);document.getElementById('a4').innerHTML='<span class="hl">Origin Station</span> = σταθμός υπεύθυνος παρακολούθησης. <span class="hl">Zone Z9</span> = ζώνη χώρας από mapping.';
+  spotlight(sec,'r4_orig','spotlight-blue');document.getElementById('co4_orig').classList.add('show');
+  await dly(9000,4);document.getElementById('co4_orig').classList.remove('show');clr();
+  document.getElementById('r4_zone').classList.add('spotlight-blue');document.getElementById('co4_zone').classList.add('show');
+  await dly(9000,4);clearBlur(sec);document.getElementById('co4_zone').classList.remove('show');
+
+  setS(4,4,10);document.getElementById('a4').innerHTML='<span class="hl">Βάρη</span> — Actual 0.400 vs Volumetric 0.878 → Charged = <strong>0.878 kg</strong> (μεγαλύτερο).';
+  spotlight(sec,'r4_wt','spotlight');document.getElementById('co4_wt').classList.add('show');
+  await dly(4800,4);clr();document.getElementById('r4_vw').classList.add('spotlight');
+  await dly(4800,4);clr();document.getElementById('r4_cw').classList.add('spotlight');
+  await dly(8400,4);clearBlur(sec);document.getElementById('co4_wt').classList.remove('show');
+
+  setS(4,5,10);document.getElementById('a4').innerHTML='<span class="hl">Client</span> = λογαριασμός χρέωσης. <span class="hl">Ref No.</span> = σύνδεση με τιμολόγιο/δελτίο αποστολής.';
+  spotlight(sec,'r4_cli','spotlight-blue');document.getElementById('co4_client').classList.add('show');
+  await dly(8400,4);document.getElementById('co4_client').classList.remove('show');clr();
+  document.getElementById('r4_ref').classList.add('spotlight-blue');document.getElementById('co4_ref').classList.add('show');
+  await dly(9600,4);clearBlur(sec);document.getElementById('co4_ref').classList.remove('show');
+
+  setS(4,6,10);document.getElementById('a4').innerHTML='<span class="hl">Consignor</span> = αποστολέας με πλήρη στοιχεία.';
+  spotlight(sec,'r4_conor','spotlight-blue');document.getElementById('co4_con').classList.add('show');
+  await dly(9600,4);clearBlur(sec);document.getElementById('co4_con').classList.remove('show');
+
+  setS(4,7,10);document.getElementById('a4').innerHTML='<span class="hl">Consignee</span> = παραλήπτης. <span class="hl">✏️</span> — κλικ → φόρμα διόρθωσης διεύθυνσης → νέα εκτύπωση AWB.';
+  spotlight(sec,'r4_conee','spotlight-green');document.getElementById('co4_cee').classList.add('show');
+  await dly(3000,4);
+  document.getElementById('modal_edit').classList.add('open');
+  await dly(7000,4);
+  document.getElementById('modal_edit').classList.remove('open');
+  await dly(600,4);
+  clearBlur(sec);document.getElementById('co4_cee').classList.remove('show');
+
+  setS(4,8,10);document.getElementById('a4').innerHTML='<span class="hl">KRONOS</span> = συνεργάτης παράδοσης. 🔴 — κλικ → αυτόματο copy AWB στον contractor.';
+  spotlight(sec,'r4_kron','spotlight');document.getElementById('co4_kron').classList.add('show');
+  await dly(3000,4);clr();
+  document.getElementById('r4_cref').classList.add('spotlight');
+  document.getElementById('modal_copy').classList.add('open');
+  await dly(6000,4);
+  document.getElementById('modal_copy').classList.remove('open');
+  await dly(800,4);
+  // Τώρα δείχνουμε το μπλε PC601 tracking link
+  document.getElementById('a4').innerHTML='<span class="hl">PC601... μπλε link</span> — κλικ → ανοίγει η σελίδα tracking του contractor KRONOS.';
+  document.getElementById('modal_track').classList.add('open');
+  await dly(5000,4);
+  document.getElementById('modal_track').classList.remove('open');
+  await dly(600,4);
+  clearBlur(sec);document.getElementById('co4_kron').classList.remove('show');
+
+  setS(4,9,10);document.getElementById('a4').innerHTML='<span class="hl">POD Image — 👁️</span> Κλικ → βλέπεις την υπογραφή του παραλήπτη που καταγράφηκε μέσω 📱 Mobile App οδηγών.';
+  spotlight(sec,'r4_stat','spotlight-green');document.getElementById('co4_stat').classList.add('show');
+  await dly(3000,4);
+  document.getElementById('co4_stat').classList.remove('show');clr();
+  document.getElementById('r4_pod').classList.add('spotlight-green');document.getElementById('co4_pod').classList.add('show');
+  await dly(2000,4);
+  document.getElementById('modal_pod').classList.add('open');
+  await dly(7000,4);
+  document.getElementById('modal_pod').classList.remove('open');
+  await dly(600,4);
+  clearBlur(sec);document.getElementById('co4_pod').classList.remove('show');
+
+  setS(4,10,10);document.getElementById('a4').innerHTML='<span class="hl">COD 75.00</span> — εισπράχθηκε μετρητά. Cash + Bank Transfer No. = παρακολούθηση χρημάτων. Ξεχωριστό module!';
+  spotlight(sec,'r4_cod','spotlight');document.getElementById('co4_cod').classList.add('show');
+  await dly(9600,4);clearBlur(sec);document.getElementById('co4_cod').classList.remove('show');
+
+  document.getElementById('p4').style.width='100%';
+  document.getElementById('a4').innerHTML='🎉 <span class="hl">Demo 1b ολοκληρώθηκε!</span> Συνέχισε με Demo 1c → Tracking Log.';
+  const b=document.getElementById('b4');b.textContent='↺ Επανεκκίνηση';b.style.background='#15803d';b.disabled=false;b.onclick=function(){rst(4)};const bp4=document.getElementById('bp4');if(bp4){bp4.style.display='none';}
+}
+
+// ── DEMO 1c ──
+function r5(){
+  document.querySelectorAll('[id^="tl"]').forEach(r=>r.classList.remove('vis'));
+  const cl=document.getElementById('co5_log');if(cl)cl.classList.remove('show');
+  setS(5,1,5);
+  const a=document.getElementById('a5');if(a)a.innerHTML='Πάτα <span class="hl">▶ Έναρξη</span> — Demo 1c: Παρακολούθηση κάθε κίνησης από ATH ως NIC.';
+}
+
+async function d5(){
+  const cl=document.getElementById('co5_log');cl.classList.add('show');
+
+  setS(5,1,5);document.getElementById('a5').innerHTML='<span class="hl">ATH — Αθήνα:</span> Booking, Scan, Manifest. Αρχή της αποστολής.';
+  document.getElementById('co5_title').textContent='📍 ATH — Αθήνα';
+  document.getElementById('co5_text').innerHTML='Booking → Scan → Manifest → Dispatch';
+  document.getElementById('tl1').classList.add('vis');await dly(2000,5);
+  document.getElementById('tl2').classList.add('vis');await dly(2000,5);
+  document.getElementById('tl3').classList.add('vis');await dly(2000,5);
+
+  setS(5,2,5);document.getElementById('a5').innerHTML='<span class="hl">ATH — Dispatch:</span> Φορτώνεται στη σακούλα D26000449 και φεύγει.';
+  document.getElementById('co5_title').textContent='🚀 Dispatch';
+  document.getElementById('co5_text').innerHTML='Bag D26000449<br>Αναχώρηση για Κύπρο';
+  document.getElementById('tl4').classList.add('vis');await dly(3000,5);
+
+  setS(5,3,5);document.getElementById('a5').innerHTML='<span class="hl">NIC — Νικοσία:</span> Άφιξη στον σταθμό Κύπρου.';
+  document.getElementById('co5_title').textContent='📍 NIC — Νικοσία';
+  document.getElementById('co5_text').innerHTML='Arrived = παρελήφθη στο NIC';
+  document.getElementById('tl5').classList.add('vis');await dly(3000,5);
+
+  setS(5,4,5);document.getElementById('a5').innerHTML='<span class="hl">OFD — Out for Delivery:</span> Ο οδηγός ξεκίνησε για παράδοση.';
+  document.getElementById('co5_title').textContent='🚗 OFD';
+  document.getElementById('co5_text').innerHTML='Out for Delivery<br>Ο οδηγός ξεκίνησε';
+  document.getElementById('tl6').classList.add('vis');await dly(3000,5);
+
+  setS(5,5,5);document.getElementById('a5').innerHTML='<span class="hl">DELIVERED ✅</span> — ARGYRIS παρέλαβε στις 14:23. PANTELIS RIDER επιβεβαίωσε.';
+  document.getElementById('co5_title').textContent='✅ DELIVERED';
+  document.getElementById('co5_text').innerHTML='Παραδόθηκε!<br>Χρήστης: <strong>PANTELIS</strong>';
+  document.getElementById('tl7').classList.add('vis');await dly(3000,5);
+
+  document.getElementById('p5').style.width='100%';
+  document.getElementById('a5').innerHTML='🎉 <span class="hl">Demo 1c ολοκληρώθηκε!</span> Πλήρης διαδρομή ATH→NIC με 7 κινήσεις.';
+  const b=document.getElementById('b5');b.textContent='↺ Επανεκκίνηση';b.style.background='#15803d';b.disabled=false;b.onclick=function(){rst(5)};const bp5=document.getElementById('bp5');if(bp5){bp5.style.display='none';}
+}
+
+// ── DEMO 2 ──
+function r2(){
+  setS(2,1,3);
+  const a=document.getElementById('a2');if(a)a.innerHTML='Πάτα <span class="hl">▶ Έναρξη</span> — Demo 2: Γρήγορη αναζήτηση με την κόκκινη μπάρα.';
+  const bar=document.getElementById('redbar');if(bar)bar.style.background='var(--red)';
+  const bi=document.getElementById('barinp');if(bi){bi.value='';bi.style.display='none';}
+  const br=document.getElementById('barres');if(br)br.style.display='none';
+}
+
+async function d2(){
+  setS(2,1,3);document.getElementById('a2').innerHTML='Βήμα 1: Η <span class="hl">κόκκινη μπάρα</span> στην κορυφή είναι παντού στο CMS.';
+  const bar=document.getElementById('redbar');
+  bar.style.boxShadow='0 0 0 3px #fbbf24';
+  await dly(3000,2);bar.style.boxShadow='';
+
+  setS(2,2,3);document.getElementById('a2').innerHTML='Βήμα 2: Πληκτρολογείς απευθείας AWB, Manifest ή Challa.';
+  const bi=document.getElementById('barinp');bi.style.display='block';bi.value='';
+  const val='010790224862';
+  for(let i=0;i<val.length;i++){bi.value=val.slice(0,i+1);await dly(120,2);}
+  await dly(1200,2);
+
+  setS(2,3,3);document.getElementById('a2').innerHTML='Βήμα 3: Αποτέλεσμα εμφανίζεται <span class="hl">αμέσως</span> — χωρίς να πας στο Query menu!';
+  document.getElementById('barres').style.display='block';
+  await dly(3000,2);
+
+  document.getElementById('p2').style.width='100%';
+  document.getElementById('a2').innerHTML='🎉 <span class="hl">Demo 2 ολοκληρώθηκε!</span>';
+  const b=document.getElementById('b2');b.textContent='↺ Επανεκκίνηση';b.style.background='#15803d';b.disabled=false;b.onclick=function(){rst(2)};const bp2=document.getElementById('bp2');if(bp2){bp2.style.display='none';}
+}
+
+// ── DEMO 3 ──
+function r3(){
+  setS(3,1,4);
+  const a=document.getElementById('a3');if(a)a.innerHTML='Πάτα <span class="hl">▶ Έναρξη</span> — Demo 3: Call, SMS, Refuse.';
+  ['sms_sent','call_done','refuse_done'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+}
+
+async function d3(){
+  setS(3,1,4);document.getElementById('a3').innerHTML='Βήμα 1: <span class="hl">SMS</span> — πρώτα στέλνεις SMS στον παραλήπτη.';
+  await dly(3000,3);
+  const ss=document.getElementById('sms_sent');if(ss)ss.style.display='block';
+
+  setS(3,2,4);document.getElementById('a3').innerHTML='Βήμα 2: <span class="hl">Call</span> — αν δεν απαντά, καλείς τηλεφωνικά.';
+  await dly(3000,3);
+  const cd=document.getElementById('call_done');if(cd)cd.style.display='block';
+
+  setS(3,3,4);document.getElementById('a3').innerHTML='Βήμα 3: <span class="hl">Refuse</span> — αν αρνηθεί το COD, καταγράφεις άρνηση.';
+  await dly(3000,3);
+  const rd=document.getElementById('refuse_done');if(rd)rd.style.display='block';
+
+  setS(3,4,4);document.getElementById('a3').innerHTML='Βήμα 4: Όλες οι ενέργειες καταγράφονται στο <span class="hl">Undelivered Report</span>.';
+  await dly(3000,3);
+
+  document.getElementById('p3').style.width='100%';
+  document.getElementById('a3').innerHTML='🎉 <span class="hl">Demo 3 ολοκληρώθηκε!</span>';
+  const b=document.getElementById('b3');b.textContent='↺ Επανεκκίνηση';b.style.background='#15803d';b.disabled=false;b.onclick=function(){rst(3)};const bp3=document.getElementById('bp3');if(bp3){bp3.style.display='none';}
+}
+
+// ── QUIZ ──
+function showSec(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+
+function goQuiz(btn){showSec('quiz',btn);document.getElementById('ngat').style.display='flex';document.getElementById('qcont').style.display='none';}
+
+let correctCount=0,answeredCount=0,currentExaminer='';
+const TOTAL=12;
+let wrongQuestions=[];
+
+function startQ(){
+  const inp=document.getElementById('nameInp');
+  const name=inp?inp.value.trim():'';
+  if(name.length<3){if(inp)inp.style.border='2px solid #cc1020';return;}
+  currentExaminer=name;correctCount=0;answeredCount=0;wrongQuestions=[];
+  document.getElementById('ngat').style.display='none';
+  document.getElementById('qcont').style.display='block';
+  document.getElementById('qExaminer').textContent=name;
+}
+
+function mcq(btn,correct,qid){
+  const card=btn.closest('[data-qid]');
+  if(card.dataset.answered==='true')return;
+  card.dataset.answered='true';
+  card.querySelectorAll('.opt').forEach(b=>{
+    b.disabled=true;
+    if(b===btn)b.classList.add(correct?'correct':'wrong');
+    else if(!correct&&b.dataset.correct==='true')b.classList.add('reveal');
+  });
+  if(correct)correctCount++;else wrongQuestions.push({id:qid,text:card.querySelector('.qt').textContent});
+  answeredCount++;
+  document.getElementById('qAns').textContent=answeredCount;
+  document.getElementById('qCor').textContent=correctCount;
+  if(answeredCount===TOTAL)setTimeout(showSc,700);
+}
+
+function tf(btn,correct,qid){mcq(btn,correct,qid);}
+
+function showFB(qid,correct){
+  const fb=document.getElementById('fb'+qid);
+  if(fb){fb.className='feedback show '+(correct?'correct-fb':'wrong-fb');}
+}
+
+function showSc(){
+  const pct=Math.round((correctCount/TOTAL)*100);
+  document.getElementById('sc_num').textContent=correctCount;
+  document.getElementById('sc_pct').textContent=pct+'%';
+  document.getElementById('qcont').style.display='none';
+  document.getElementById('sc_sec').style.display='block';
+}
+
+function rstQ(){
+  correctCount=0;answeredCount=0;wrongQuestions=[];
+  document.getElementById('sc_sec').style.display='none';
+  document.getElementById('ngat').style.display='flex';
+  document.getElementById('qcont').style.display='none';
+  document.querySelectorAll('[data-qid]').forEach(c=>{
+    c.dataset.answered='false';
+    c.querySelectorAll('.opt').forEach(b=>{b.disabled=false;b.className='opt';});
+  });
+}
+
+function rbtn(){showSec('training',document.querySelectorAll('.nav-tab')[0]);}
+</script>
+</body>
+</html>
