@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4A Express — O08 · DRS & Daily Reconciliation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inconsolata:wght@400;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
+
+:root {
+  --red:#cc1020; --red-dark:#8b0a14;
+  --bg:#f5f3ef; --white:#fff;
+  --dark:#1a1208; --mid:#4a3f35; --muted:#9e8e80; --border:#ddd5c8;
+  --success:#1a7a4a; --error:#cc1020; --warning:#d97706;
+  --card:#fff; --tag-bg:#f0ebe4;
+  --blue:#2563eb; --purple:#7c3aed; --green:#15803d;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Lora',Georgia,serif;background:var(--bg);color:var(--dark);min-height:100vh;}
+
+.site-header{background:var(--red);position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,.25);}
+.header-inner{max-width:1000px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:white;letter-spacing:2px;}
+.logo span{opacity:.7;font-weight:400;font-size:10px;display:block;letter-spacing:1px;}
+.progress-bar-wrap{flex:1;max-width:240px;}
+.progress-label{font-family:'Inconsolata',monospace;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;display:flex;justify-content:space-between;}
+.progress-track{background:rgba(255,255,255,.2);border-radius:100px;height:5px;overflow:hidden;}
+.progress-fill{height:100%;background:white;border-radius:100px;transition:width .5s ease;width:0%;}
+.nav-tabs{display:flex;gap:3px;}
+.nav-tab{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;padding:6px 11px;border-radius:6px;border:none;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.7);background:transparent;}
+.nav-tab.active,.nav-tab:hover{background:rgba(255,255,255,.2);color:white;}
+
+.main{max-width:1000px;margin:0 auto;padding:36px 22px 80px;}
+.section{display:none;}
+.section.active{display:block;animation:fadeIn .4s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.hero{background:var(--dark);border-radius:16px;padding:40px 34px;color:white;margin-bottom:26px;position:relative;overflow:hidden;}
+.hero::before{content:'DRS';position:absolute;right:-10px;top:-5px;font-family:'Syne',sans-serif;font-size:120px;font-weight:800;opacity:.05;letter-spacing:-3px;line-height:1;}
+.hero-badge{font-family:'Inconsolata',monospace;font-size:10px;letter-spacing:2px;background:rgba(255,255,255,.1);padding:3px 11px;border-radius:100px;display:inline-block;margin-bottom:12px;color:rgba(255,255,255,.8);}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(22px,5vw,36px);font-weight:800;line-height:1.1;margin-bottom:9px;}
+.hero p{font-size:14px;opacity:.7;line-height:1.6;max-width:560px;font-style:italic;}
+.hero-meta{display:flex;gap:16px;margin-top:18px;flex-wrap:wrap;}
+.hero-stat{font-family:'Inconsolata',monospace;font-size:11px;opacity:.7;display:flex;align-items:center;gap:5px;}
+.hero-stat::before{content:'▸';opacity:.5;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px 28px;margin-bottom:16px;}
+.card-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--dark);margin-bottom:13px;display:flex;align-items:center;gap:9px;}
+.card-title .num{background:var(--red);color:white;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.section-header{font-family:'Inconsolata',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:13px;display:flex;align-items:center;gap:9px;}
+.section-header::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.alert{border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.7;margin-top:11px;display:flex;gap:8px;align-items:flex-start;}
+.alert.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;}
+.alert.warning{background:#fffbeb;border:1px solid #fcd34d;color:#92400e;}
+.alert.success{background:#f0fdf4;border:1px solid #86efac;color:#14532d;}
+.alert.danger{background:#fff5f5;border:2px solid var(--red);color:#7f1d1d;}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.divider{height:1px;background:var(--border);margin:18px 0;}
+kbd{background:#f0ebe4;padding:1px 5px;border-radius:3px;border:1px solid #ccc;font-family:monospace;font-size:12px;}
+
+/* FLOW */
+.flow-v{display:flex;flex-direction:column;gap:0;margin:16px 0;}
+.flow-step-v{display:flex;align-items:flex-start;gap:14px;}
+.flow-dot{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;font-weight:700;font-family:'Syne',sans-serif;}
+.flow-dot.red{background:var(--red);color:white;}
+.flow-dot.blue{background:#2563eb;color:white;}
+.flow-dot.green{background:#15803d;color:white;}
+.flow-dot.orange{background:#d97706;color:white;}
+.flow-dot.grey{background:#6b7280;color:white;}
+.flow-dot.purple{background:#7c3aed;color:white;}
+.flow-line{width:2px;background:var(--border);margin-left:17px;height:24px;}
+.flow-content{padding-top:6px;padding-bottom:18px;flex:1;}
+.flow-content h4{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:4px;}
+.flow-content p{font-size:12.5px;color:var(--mid);line-height:1.7;}
+
+/* DRS CARD */
+.drs-card{background:white;border:1px solid #ddd;border-radius:10px;padding:14px;margin:12px 0;font-family:Arial,sans-serif;font-size:11px;}
+.drs-header{background:#1a1208;color:white;padding:8px 12px;border-radius:6px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+.drs-header .drs-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;}
+.drs-row{display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr;gap:8px;padding:8px;border-bottom:1px solid #f0f0f0;font-size:11px;align-items:center;}
+.drs-row:last-child{border-bottom:none;}
+.drs-row.header{background:#f8f8f8;font-weight:700;font-size:10px;color:#666;letter-spacing:.5px;}
+.fc-badge{background:#1a1208;color:#fbbf24;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;font-family:'Inconsolata',monospace;}
+.cash-badge{background:#15803d;color:white;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;font-family:'Inconsolata',monospace;}
+.cod-badge{background:#cc1020;color:white;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;font-family:'Inconsolata',monospace;}
+
+/* RECON BOXES */
+.recon-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:14px 0;}
+@media(max-width:600px){.recon-grid{grid-template-columns:1fr;}}
+.recon-box{border-radius:10px;padding:16px;text-align:center;}
+.recon-box.delivered{background:#f0fdf4;border:2px solid #22c55e;}
+.recon-box.pending{background:#fff7ed;border:2px solid #f97316;}
+.recon-box.returned{background:#fff5f5;border:2px solid #cc1020;}
+.recon-box .rb-icon{font-size:28px;margin-bottom:6px;display:block;}
+.recon-box .rb-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;margin-bottom:4px;}
+.recon-box.delivered .rb-title{color:#15803d;}
+.recon-box.pending .rb-title{color:#b45309;}
+.recon-box.returned .rb-title{color:#cc1020;}
+.recon-box .rb-desc{font-size:11px;color:var(--mid);line-height:1.6;}
+
+/* COD DASHBOARD CARDS */
+.cod-dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:14px 0;}
+.cod-card{border-radius:10px;padding:14px;text-align:center;}
+.cod-card .cc-title{font-size:10px;font-weight:700;font-family:'Syne',sans-serif;margin-bottom:8px;}
+.cod-card .cc-val{font-family:'Inconsolata',monospace;font-size:20px;font-weight:700;}
+.cod-card.c1{background:#e0f2fe;border:1px solid #7dd3fc;} .cod-card.c1 .cc-title{color:#0369a1;} .cod-card.c1 .cc-val{color:#0369a1;}
+.cod-card.c2{background:#fef9c3;border:1px solid #fde047;} .cod-card.c2 .cc-title{color:#854d0e;} .cod-card.c2 .cc-val{color:#854d0e;}
+.cod-card.c3{background:#dcfce7;border:1px solid #86efac;} .cod-card.c3 .cc-title{color:#15803d;} .cod-card.c3 .cc-val{color:#15803d;}
+.cod-card.c4{background:#fef3c7;border:1px solid #fcd34d;} .cod-card.c4 .cc-title{color:#b45309;} .cod-card.c4 .cc-val{color:#b45309;}
+.cod-card.c5{background:#fce7f3;border:1px solid #f9a8d4;} .cod-card.c5 .cc-title{color:#9d174d;} .cod-card.c5 .cc-val{color:#9d174d;}
+.cod-card.c6{background:#fee2e2;border:2px solid #cc1020;} .cod-card.c6 .cc-title{color:#991b1b;} .cod-card.c6 .cc-val{color:#cc1020;font-size:26px;}
+.cod-card.c7{background:#f0fdf4;border:1px solid #86efac;} .cod-card.c7 .cc-title{color:#15803d;} .cod-card.c7 .cc-val{color:#15803d;}
+
+/* QUIZ */
+.quiz-header{background:var(--dark);border-radius:16px;padding:26px;color:white;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:13px;}
+.quiz-header h2{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;}
+.quiz-header p{font-size:12px;opacity:.7;margin-top:3px;font-style:italic;}
+.quiz-stats{display:flex;gap:16px;}
+.quiz-stat .val{font-family:'Inconsolata',monospace;font-size:24px;font-weight:600;color:#fbbf24;display:block;}
+.quiz-stat .lbl{font-size:9px;opacity:.6;letter-spacing:1px;font-family:'Inconsolata',monospace;}
+.name-gate{min-height:50vh;display:flex;align-items:center;justify-content:center;}
+.name-box{background:white;border:1px solid var(--border);border-radius:20px;padding:40px 34px;max-width:400px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.08);}
+.name-box .gate-icon{font-size:44px;margin-bottom:12px;}
+.name-box h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px;}
+.name-box p{font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:20px;font-style:italic;}
+.name-input{width:100%;padding:12px 15px;border:2px solid var(--border);border-radius:10px;font-family:'Lora',serif;font-size:15px;color:var(--dark);outline:none;transition:border-color .2s;margin-bottom:6px;text-align:center;}
+.name-input:focus{border-color:var(--red);}
+.name-input.error{border-color:var(--error);background:#fff5f5;}
+.name-error{font-size:11px;color:var(--error);margin-bottom:12px;min-height:16px;font-family:'Inconsolata',monospace;}
+.question-card{background:white;border:1px solid var(--border);border-radius:13px;padding:24px;margin-bottom:13px;}
+.q-header{display:flex;gap:10px;align-items:flex-start;margin-bottom:15px;}
+.q-num{font-family:'Inconsolata',monospace;font-size:9px;padding:3px 9px;border-radius:100px;font-weight:600;flex-shrink:0;margin-top:2px;}
+.q-num.basic{background:#dcfce7;color:#15803d;}
+.q-num.medium{background:#fef3c7;color:#b45309;}
+.q-num.hard{background:#fee2e2;color:#b91c1c;}
+.q-text{font-size:14px;line-height:1.6;font-weight:500;}
+.options{display:flex;flex-direction:column;gap:6px;}
+.option-btn{width:100%;text-align:left;padding:10px 14px;border:2px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-family:'Lora',serif;font-size:13px;color:var(--dark);transition:all .15s;line-height:1.5;}
+.option-btn:hover:not(:disabled){border-color:var(--red);background:#fff5f5;}
+.option-btn.correct{border-color:var(--success)!important;background:#f0fdf4!important;color:#14532d!important;cursor:default;}
+.option-btn.wrong{border-color:var(--error)!important;background:#fff5f5!important;color:#7f1d1d!important;cursor:default;}
+.option-btn.reveal{border-color:var(--success)!important;background:#f0fdf4!important;color:#14532d!important;opacity:.5;cursor:default;}
+.option-btn:disabled{cursor:default;}
+.tf-options{display:flex;gap:9px;}
+.tf-btn{flex:1;padding:12px;border:2px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;transition:all .15s;}
+.tf-btn:hover:not(:disabled){border-color:var(--red);background:#fff5f5;}
+.tf-btn.correct{border-color:var(--success)!important;background:#f0fdf4!important;color:var(--success)!important;cursor:default;}
+.tf-btn.wrong{border-color:var(--error)!important;background:#fff5f5!important;color:var(--error)!important;cursor:default;}
+.tf-btn.reveal{border-color:var(--success)!important;background:#f0fdf4!important;color:var(--success)!important;opacity:.5;cursor:default;}
+.tf-btn:disabled{cursor:default;}
+.feedback{margin-top:10px;padding:10px 12px;border-radius:8px;font-size:12.5px;line-height:1.6;display:none;}
+.feedback.show{display:block;}
+.feedback.correct-fb{background:#f0fdf4;border:1px solid #86efac;color:#14532d;}
+.feedback.wrong-fb{background:#fff5f5;border:1px solid #fca5a5;color:#7f1d1d;}
+.score-section{display:none;text-align:center;padding:40px 18px;}
+.score-section.show{display:block;animation:fadeIn .5s ease;}
+.score-circle{width:145px;height:145px;border-radius:50%;border:7px solid var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 20px;background:white;box-shadow:0 8px 40px rgba(204,16,32,.15);}
+.score-num{font-family:'Syne',sans-serif;font-size:44px;font-weight:800;color:var(--red);line-height:1;}
+.score-denom{font-family:'Inconsolata',monospace;font-size:12px;color:var(--muted);}
+.score-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:6px;}
+.score-msg{font-size:14px;color:var(--mid);font-style:italic;margin-bottom:22px;}
+.score-breakdown{display:flex;justify-content:center;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+.score-item{text-align:center;padding:12px 14px;background:white;border:1px solid var(--border);border-radius:10px;min-width:80px;}
+.score-item .si-val{font-family:'Inconsolata',monospace;font-size:22px;font-weight:600;display:block;}
+.score-item.correct-s .si-val{color:var(--success);}
+.score-item.wrong-s .si-val{color:var(--error);}
+.score-item.pct-s .si-val{color:var(--warning);}
+.score-item .si-lbl{font-size:9px;color:var(--muted);font-family:'Inconsolata',monospace;margin-top:2px;}
+.wrong-analysis{background:white;border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:22px;text-align:left;}
+.wrong-analysis h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;}
+.wrong-item{padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;display:flex;gap:9px;}
+.wrong-item:last-child{border-bottom:none;}
+.wrong-item .wi-q{color:var(--mid);flex:1;}
+.wrong-tag{font-family:'Inconsolata',monospace;font-size:9px;padding:2px 8px;border-radius:100px;flex-shrink:0;}
+.wrong-tag.basic{background:#dcfce7;color:#15803d;}
+.wrong-tag.medium{background:#fef3c7;color:#b45309;}
+.wrong-tag.hard{background:#fee2e2;color:#b91c1c;}
+.action-btns{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;}
+.retry-btn{padding:12px 26px;background:var(--red);color:white;border:none;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;transition:all .2s;}
+.retry-btn:hover{background:var(--red-dark);transform:translateY(-1px);}
+.study-btn{padding:12px 26px;background:white;color:var(--dark);border:2px solid var(--border);border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;}
+.study-btn:hover{border-color:var(--dark);}
+.examiner-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px;font-family:'Inconsolata',monospace;font-size:11px;color:rgba(255,255,255,.9);display:inline-flex;align-items:center;gap:7px;margin-top:8px;}
+.examiner-badge span{color:#fbbf24;font-weight:600;}
+.footer{text-align:center;padding-bottom:20px;font-family:'Inconsolata',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo">4A EXPRESS <span>O08 · DRS & Daily Reconciliation</span></div>
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span id="progressLabel">Εκπαίδευση</span><span id="progressPct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showSection('training',this)">📖 Υλικό</button>
+      <button class="nav-tab" onclick="goToQuiz(this)">✏️ Αξιολόγηση</button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+<!-- ══════════ TRAINING ══════════ -->
+<div class="section active" id="training">
+
+  <div class="hero">
+    <div class="hero-badge">MODULE O08 · DISPATCHER / ΤΣΕΚΑΡΙΣΤΗΣ</div>
+    <h1>DRS & Daily<br>Reconciliation</h1>
+    <p>Delivery Run Sheet — η σελίδα παραδόσεων του οδηγού · Ημερήσια εκκαθάριση αποστολών και χρημάτων</p>
+    <div class="hero-meta">
+      <span class="hero-stat">DRS = Driver Run Sheet</span>
+      <span class="hero-stat">Box scan — όχι AWB</span>
+      <span class="hero-stat">COD + Freight Collect</span>
+      <span class="hero-stat">Route Dashboard</span>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 1 — DRS -->
+  <div class="section-header">Ενότητα 1 — DRS · Delivery Run Sheet</div>
+  <div class="card">
+    <div class="card-title"><span class="num">1</span>Τι είναι το DRS;</div>
+    <p style="font-size:14px;line-height:1.8;color:var(--mid);margin-bottom:16px;">
+      Το <strong>DRS (Delivery Run Sheet)</strong> είναι η <strong>σελίδα παραδόσεων του οδηγού</strong>. Περιέχει όλες τις αποστολές που πρέπει να παραδοθούν μαζί με τα χρήματα που πρέπει να εισπραχθούν.<br><br><span style="background:#fee2e2;border:1.5px solid #cc1020;border-radius:6px;padding:5px 9px;display:inline-block;color:#7f1d1d;font-size:12px;font-weight:600;">🔴 Το DRS δεν μπορεί να δημιουργηθεί για επόμενη ημέρα — ισχύει αποκλειστικά για την τρέχουσα ημέρα.</span>
+    </p>
+
+    <div style="background:var(--dark);border-radius:12px;padding:18px 22px;margin-bottom:14px;">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fbbf24;margin-bottom:12px;">📋 DRS περιέχει για κάθε αποστολή:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:rgba(255,255,255,.85);">
+        <div style="display:flex;gap:6px;align-items:center;">✅ Παραλήπτης + διεύθυνση</div>
+        <div style="display:flex;gap:6px;align-items:center;">✅ AWB + Box Number</div>
+        <div style="display:flex;gap:6px;align-items:center;">✅ Βάρος τεμαχίων</div>
+        <div style="display:flex;gap:6px;align-items:center;">✅ Qty (π.χ. 1/4, 2/4)</div>
+        <div style="display:flex;gap:6px;align-items:center;color:#fbbf24;font-weight:700;">💰 COD Cash / COD Cheque</div>
+        <div style="display:flex;gap:6px;align-items:center;color:#fb923c;font-weight:700;">🚚 FREIGHT COLLECT ποσό</div>
+        <div style="display:flex;gap:6px;align-items:center;">✅ Πεδίο υπογραφής παραλήπτη</div>
+        <div style="display:flex;gap:6px;align-items:center;">✅ Time / Date παράδοσης</div>
+      </div>
+    </div>
+
+    <div class="alert danger">
+      <span class="alert-icon">🔴</span>
+      <div>
+        <strong>ΥΠΟΧΡΕΩΤΙΚΗ ΓΝΩΣΗ — BOX scan, ΟΧΙ AWB:</strong><br>
+        Ο dispatcher σκανάρει πάντα τον <strong>Box αριθμό</strong> — ΟΧΙ τον AWB. Γιατί; Μια αποστολή μπορεί να έχει <strong>πολλά τεμάχια (boxes)</strong>. Το σκανάρισμα Box δίνει πλήρη απεικόνιση κάθε τεμαχίου που παραδόθηκε.
+      </div>
+    </div>
+
+    <div class="alert info" style="margin-top:8px;">
+      <span class="alert-icon">💡</span>
+      <div>
+        Κάθε αποστολή που μπαίνει στο DRS <strong>ενημερώνει αυτόματα</strong> το <strong>📱 Mobile App</strong> του οδηγού — βλέπει αμέσως την πλήρη λίστα παραδόσεων και το ταμειακό σύνολο οφειλών.
+      </div>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 2 — ΡΟΗ DRS -->
+  <div class="section-header">Ενότητα 2 — Πώς δημιουργείται το DRS</div>
+  <div class="card">
+    <div class="card-title"><span class="num">2</span>Ροή δημιουργίας DRS — βήμα προς βήμα</div>
+
+    <div class="flow-v">
+      <div class="flow-step-v">
+        <div class="flow-dot red">1</div>
+        <div class="flow-content">
+          <h4>Operation → Runsheet Entry</h4>
+          <p>Ο dispatcher ανοίγει το Runsheet Entry. Ο αριθμός runsheet παράγεται αυτόματα από το σύστημα.</p>
+        </div>
+      </div>
+      <div class="flow-line"></div>
+      <div class="flow-step-v">
+        <div class="flow-dot blue">2</div>
+        <div class="flow-content">
+          <h4>Επιλογή Delivery Boy (οδηγός)</h4>
+          <p>Επιλέγεται ο οδηγός που αναλαμβάνει τις παραδόσεις — π.χ. NTAROUTIS MIHALIS [E1021-ATH].</p>
+        </div>
+      </div>
+      <div class="flow-line"></div>
+      <div class="flow-step-v">
+        <div class="flow-dot orange">3</div>
+        <div class="flow-content">
+          <h4>Σκανάρισμα Boxes κατά Ταχυδρομικό Κώδικα</h4>
+          <p>Ο dispatcher χρεώνει αποστολές στον οδηγό <strong>σύμφωνα με τους ταχυδρομικούς κώδικες</strong> που αντιστοιχούν στις περιοχές παράδοσής του. Σκανάρεται πάντα <strong>Box — ΟΧΙ AWB</strong>.</p>
+        </div>
+      </div>
+      <div class="flow-line"></div>
+      <div class="flow-step-v">
+        <div class="flow-dot purple">4</div>
+        <div class="flow-content">
+          <h4>Print → Runsheet Print</h4>
+          <p>Εκτυπώνεται το DRS από: <kbd>Print</kbd> → <kbd>Runsheet Print</kbd>. Το FREIGHT COLLECT και το COD φαίνονται ευδιάκριτα.</p>
+        </div>
+      </div>
+      <div class="flow-line"></div>
+      <div class="flow-step-v">
+        <div class="flow-dot red">✓</div>
+        <div class="flow-content">
+          <h4>Επαλήθευση τεμαχίων — Dispatcher & Οδηγός</h4>
+          <p>
+            Ο dispatcher και ο οδηγός <strong>επαληθεύουν μαζί</strong> ότι ο αριθμός των φυσικών τεμαχίων είναι <strong>ισόποσος</strong> με τα boxes του DRS.<br><br>
+            <span style="background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;padding:5px 9px;display:inline-block;color:#7f1d1d;font-size:11px;font-weight:600;margin-top:4px;">
+              ⚠️ Από τη στιγμή που παραλαμβάνει ο οδηγός, είναι <strong>αποκλειστικά υπεύθυνος</strong> για όλα τα τεμάχια.
+            </span>
+          </p>
+        </div>
+      </div>
+      <div class="flow-line"></div>
+      <div class="flow-step-v">
+        <div class="flow-dot green">5</div>
+        <div class="flow-content">
+          <h4>Ο οδηγός παραδίδει + Mobile App</h4>
+          <p>Ο οδηγός βλέπει το DRS στο <strong>📱 Mobile App 4A</strong>. Κατά την παράδοση ο παραλήπτης υπογράφει → η αποστολή ενημερώνεται αυτόματα στο σύστημα.</p>
+        </div>
+      </div>
+      <div class="flow-line"></div>
+      <div class="flow-step-v">
+        <div class="flow-dot grey">6</div>
+        <div class="flow-content">
+          <h4>Route Dashboard — Real-time παρακολούθηση</h4>
+          <p>Ο dispatcher παρακολουθεί live: Total · Pending · Delivered · UnDelivered ανά οδηγό. Το <strong>πιο έντονο πράσινο AWB</strong> = η τελευταία παράδοση του οδηγού.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 3 — DAILY RECONCILIATION -->
+  <div class="section-header">Ενότητα 3 — Daily Reconciliation</div>
+  <div class="card">
+    <div class="card-title"><span class="num">3</span>Daily Reconciliation — Ημερήσια Εκκαθάριση</div>
+    <p style="font-size:14px;line-height:1.8;color:var(--mid);margin-bottom:14px;">
+      Όταν ο οδηγός επιστρέφει στο γραφείο, ο dispatcher/τσεκαριστής ανοίγει το <strong>Daily Reconciliation</strong> για να ξεχρεώσει τον οδηγό — παραδόσεις και χρήματα.
+    </p>
+
+    <div class="recon-grid">
+      <div class="recon-box delivered">
+        <span class="rb-icon">✅</span>
+        <div class="rb-title">Delivered Items</div>
+        <div class="rb-desc">Αποστολές που παραδόθηκαν + χρήματα εισπράχθηκαν (COD + Freight Collect)</div>
+      </div>
+      <div class="recon-box pending">
+        <span class="rb-icon">⏳</span>
+        <div class="rb-title">Pending Items</div>
+        <div class="rb-desc">Αποστολές που ΔΕΝ παραδόθηκαν — περιμένουν επανάληψη ή επιστροφή</div>
+      </div>
+      <div class="recon-box returned">
+        <span class="rb-icon">↩️</span>
+        <div class="rb-title">Return Items</div>
+        <div class="rb-desc">Σκανάρισμα από Pending → Return. Ο οδηγός επιστρέφει τα undelivered boxes</div>
+      </div>
+    </div>
+
+    <div class="alert danger" style="margin-top:14px;">
+      <span class="alert-icon">🔴</span>
+      <div><strong>ΚΡΙΣΙΜΟ:</strong> Ο οδηγός πρέπει να παραδώσει <strong>ΟΛΑ τα undelivered boxes</strong> στο γραφείο. Σκανάρονται από Pending → Return Items κατά το reconciliation.<br><br>⚠️ Ο οδηγός <strong>υποχρεούται</strong> να αιτιολογεί κάθε απαράδοτο box στο Mobile App — είναι προσωπική υποχρέωσή του απέναντι στο γραφείο και τον πελάτη.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">📊 COD Details — Τι δείχνει:</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:12px;margin-bottom:14px;">
+      <div style="background:#f8f8f8;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border);">
+        <div style="font-family:'Inconsolata',monospace;font-size:11px;color:var(--muted);">Total</div>
+        <div style="font-weight:700;font-size:14px;">Σύνολο αποστολών</div>
+      </div>
+      <div style="background:#f0fdf4;border-radius:8px;padding:10px;text-align:center;border:1px solid #86efac;">
+        <div style="font-family:'Inconsolata',monospace;font-size:11px;color:var(--success);">DLVRD</div>
+        <div style="font-weight:700;font-size:14px;color:var(--success);">Παραδόθηκαν</div>
+      </div>
+      <div style="background:#fff7ed;border-radius:8px;padding:10px;text-align:center;border:2px solid #f97316;">
+        <div style="font-family:'Inconsolata',monospace;font-size:11px;color:#c2410c;font-weight:700;">🟠 Pending</div>
+        <div style="font-weight:700;font-size:14px;color:#c2410c;">Εκκρεμείς</div>
+      </div>
+    </div>
+
+    <div class="alert success">
+      <span class="alert-icon">✅</span>
+      <div>Μετά το <strong>Submit</strong> ο οδηγός ξεχρεώνεται πλήρως — αποστολές και χρήματα. Το σύστημα κλειδώνει το reconciliation.</div>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 4 — COD ΠΑΡΑΛΕΙΦΘΕΝ -->
+  <div class="section-header">Ενότητα 4 — Αντικαταβολή που Παραλείφθηκε</div>
+  <div class="card">
+    <div class="card-title"><span class="num">4</span>Οδηγός δεν εισπράττει αντικαταβολή από λάθος</div>
+
+    <div style="background:var(--dark);border-radius:12px;padding:18px 22px;margin-bottom:14px;">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fbbf24;margin-bottom:12px;">⚠️ Σενάριο — Τι γίνεται;</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:12px;color:rgba(255,255,255,.85);">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="background:#cc1020;color:white;padding:2px 8px;border-radius:4px;font-family:'Inconsolata',monospace;font-size:10px;flex-shrink:0;">1</span>
+          <span>Ο οδηγός παραδίδει αποστολή με <strong style="color:#fbbf24;">αντικαταβολή</strong> αλλά από απροσεξία <strong style="color:#fca5a5;">δεν εισπράττει</strong> τα χρήματα</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="background:#cc1020;color:white;padding:2px 8px;border-radius:4px;font-family:'Inconsolata',monospace;font-size:10px;flex-shrink:0;">2</span>
+          <span>Ο οδηγός σε συνεργασία με τον <strong style="color:white;">υπεύθυνο αντικαταβολών</strong> και τον <strong style="color:white;">διακινητή</strong> επικοινωνούν τηλεφωνικά με τον παραλήπτη για δρομολόγηση είσπραξης</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="background:#cc1020;color:white;padding:2px 8px;border-radius:4px;font-family:'Inconsolata',monospace;font-size:10px;flex-shrink:0;">3</span>
+          <span>Εάν <strong style="color:#fca5a5;">τελικά δεν εισπραχθεί</strong> η αντικαταβολή → ο οδηγός είναι <strong style="color:#fbbf24;">αποκλειστικά υπεύθυνος</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert danger">
+      <span class="alert-icon">🔴</span>
+      <div>
+        <strong>ΥΠΟΧΡΕΩΤΙΚΗ ΓΝΩΣΗ — ΠΡΟΣΩΠΙΚΗ ΕΥΘΥΝΗ ΟΔΗΓΟΥ:</strong><br>
+        Ο οδηγός είναι <strong>αποκλειστικά υπεύθυνος</strong> για κάθε αντικαταβολή που αναγράφεται στο DRS του. Εάν παραδώσει χωρίς να εισπράξει — ακόμα και από λάθος — η ευθύνη βαρύνει <strong>αποκλειστικά τον ίδιο</strong>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 5 — ΑΔΥΝΑΜΙΑ ΠΑΡΑΔΟΣΗΣ -->
+  <div class="section-header">Ενότητα 5 — Αδυναμία Παράδοσης</div>
+  <div class="card">
+    <div class="card-title"><span class="num">5</span>Όταν ο οδηγός δεν μπορεί να παραδώσει</div>
+    <p style="font-size:14px;line-height:1.8;color:var(--mid);margin-bottom:14px;">
+      Όταν μια αποστολή δεν μπορεί να παραδοθεί, ο οδηγός <strong>υποχρεούται να αιτιολογήσει</strong> μέσω του Mobile App 4A.<br><br>Ο οδηγός παραλαμβάνει τα boxes και ξεκινά τις παραδόσεις. Για κάθε box που <strong>δεν καταφέρνει να παραδώσει</strong>, υποχρεούται να καταχωρήσει αιτιολόγηση στο Mobile App.<br><br>Ο οδηγός <strong>υποχρεούται</strong> να αιτιολογεί κάθε απαράδοτο box. Η αιτιολόγηση εμφανίζεται αυτόματα στο <strong>tracking</strong> της αποστολής στο site 4aexpress.com και στο CMS.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;">
+      <div style="background:#fff7ed;border:1.5px solid #f97316;border-radius:10px;padding:12px 14px;">
+        <div style="font-size:18px;margin-bottom:5px;">🚪</div>
+        <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#c2410c;margin-bottom:3px;">Απουσία παραλήπτη</div>
+        <div style="font-size:11px;color:var(--mid);">Δεν απάντησε κανείς στη διεύθυνση</div>
+      </div>
+      <div style="background:#fff7ed;border:1.5px solid #f97316;border-radius:10px;padding:12px 14px;">
+        <div style="font-size:18px;margin-bottom:5px;">📍</div>
+        <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#c2410c;margin-bottom:3px;">Αδυναμία εύρεσης</div>
+        <div style="font-size:11px;color:var(--mid);">Η διεύθυνση δεν βρέθηκε ή δεν αντιστοιχεί σε οικιστικό/εταιρία</div>
+      </div>
+      <div style="background:#fff7ed;border:1.5px solid #f97316;border-radius:10px;padding:12px 14px;">
+        <div style="font-size:18px;margin-bottom:5px;">⛈️</div>
+        <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#c2410c;margin-bottom:3px;">Καιρικές συνθήκες</div>
+        <div style="font-size:11px;color:var(--mid);">Αδυναμία παράδοσης λόγω καιρού</div>
+      </div>
+      <div style="background:#fff7ed;border:1.5px solid #f97316;border-radius:10px;padding:12px 14px;">
+        <div style="font-size:18px;margin-bottom:5px;">🚫</div>
+        <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#c2410c;margin-bottom:3px;">Άρνηση παραλαβής</div>
+        <div style="font-size:11px;color:var(--mid);">Ο παραλήπτης αρνήθηκε — π.χ. αρνηση COD λόγω έλλειψης χρημάτων</div>
+      </div>
+    </div>
+
+    <div style="background:var(--dark);border-radius:12px;padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="font-size:32px;">📱</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:4px;">Ο οδηγός καταχωρεί αιτιολόγηση στο Mobile App 4A</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;">
+          Η αιτιολόγηση εμφανίζεται αυτόματα στο <strong style="color:white;">tracking</strong> της αποστολής στο <strong style="color:white;">4aexpress.com</strong> και στο <strong style="color:white;">CMS</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert warning">
+      <span class="alert-icon">🟠</span>
+      <div>
+        <strong>Route Dashboard — Πορτοκαλί χρώμα:</strong><br>
+        Αποστολές που έχουν <strong>αιτιολογηθεί</strong> για αδυναμία παράδοσης εμφανίζονται με <strong>πορτοκαλί</strong> χρώμα στο Route Dashboard. Σημαίνει ότι το status τους έχει δικαιολογηθεί ορθά από τον οδηγό.
+      </div>
+    </div>
+
+    <div class="alert info" style="margin-top:8px;">
+      <span class="alert-icon">💡</span>
+      <div>
+        <strong>Σύνοψη χρωμάτων Route Dashboard:</strong><br>
+        ⬜ Pending · 🟢 Delivered · 🟠 UnDelivered με αιτιολόγηση · 🟢 <strong>Έντονο πράσινο</strong> = τελευταία παράδοση
+      </div>
+    </div>
+  </div>
+
+  <!-- ΕΝΟΤΗΤΑ 5 — COD Dashboard -->
+  <div class="section-header">Ενότητα 5 — COD Dashboard</div>
+  <div class="card">
+    <div class="card-title"><span class="num">5</span>COD Dashboard — Εποπτεία γραφείου</div>
+    <p style="font-size:14px;line-height:1.8;color:var(--mid);margin-bottom:14px;">
+      Το <strong>COD Dashboard</strong> δίνει πλήρη εποπτεία της ημέρας ανά σταθμό — όλα τα εισπραχθέντα ποσά και η κατάσταση reconciliation.
+    </p>
+
+    <div class="cod-dash">
+      <div class="cod-card c1">
+        <div class="cc-title">💵 CASH AMOUNT<br>/AWB Count</div>
+        <div class="cc-val">0.00/0</div>
+      </div>
+      <div class="cod-card c2">
+        <div class="cc-title">🏦 CHEQUE AMOUNT<br>/AWB Count</div>
+        <div class="cc-val">0.00/0</div>
+      </div>
+      <div class="cod-card c3">
+        <div class="cc-title">🛒 BUY COD AMOUNT<br>/AWB Count</div>
+        <div class="cc-val">0.00/0</div>
+      </div>
+      <div class="cod-card c4">
+        <div class="cc-title">💰 TOTAL RECEIVED<br>AMOUNT</div>
+        <div class="cc-val">0.00</div>
+      </div>
+      <div class="cod-card c5">
+        <div class="cc-title">🚚 RECEIVED FREIGHT<br>AMOUNT</div>
+        <div class="cc-val">0.00</div>
+      </div>
+      <div class="cod-card c6">
+        <div class="cc-title">⚠️ UNRECONCILED<br>DRS</div>
+        <div class="cc-val">3</div>
+      </div>
+      <div class="cod-card c7">
+        <div class="cc-title">✅ RECONCILED NOT<br>TRANSFERRED</div>
+        <div class="cc-val">0</div>
+      </div>
+    </div>
+
+    <div class="alert warning" style="margin-top:6px;">
+      <span class="alert-icon">⚠️</span>
+      <div><strong>UnReconciled DRS</strong> = οδηγοί που δεν έχουν γίνει ακόμα reconcile. Πρέπει να είναι <strong>0</strong> στο τέλος της ημέρας.</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:28px;">
+    <button class="retry-btn" onclick="goToQuiz(document.querySelectorAll('.nav-tab')[1])">✏️ Πήγαινε στην Αξιολόγηση →</button>
+  </div>
+
+</div><!-- /training -->
+
+<!-- ══════════ QUIZ ══════════ -->
+<div class="section" id="quiz">
+
+  <div id="ngat" class="name-gate">
+    <div class="name-box">
+      <div class="gate-icon">🚚</div>
+      <h2>Αξιολόγηση DRS & Reconciliation</h2>
+      <p>Συμπλήρωσε το πλήρες ονοματεπώνυμό σου. Τα αποτελέσματα καταγράφονται.</p>
+      <input class="name-input" id="nameInput" type="text" placeholder="Ονοματεπώνυμο..." maxlength="60" autocomplete="off" onkeydown="if(event.key==='Enter')startQuiz()">
+      <div class="name-error" id="nameError"></div>
+      <button class="retry-btn" style="width:100%;margin-top:8px;" onclick="startQuiz()">Έναρξη Αξιολόγησης →</button>
+    </div>
+  </div>
+
+  <div id="qcont" style="display:none;">
+    <div class="quiz-header">
+      <div>
+        <h2>Αξιολόγηση — O08 DRS & Reconciliation</h2>
+        <p>20 ερωτήσεις · 3 επίπεδα · Οι απαντήσεις είναι οριστικές</p>
+        <div class="examiner-badge">👤 <span id="qExaminer">—</span></div>
+      </div>
+      <div class="quiz-stats">
+        <div class="quiz-stat"><span class="val" id="qAns">0</span><span class="lbl">ΑΠΑΝΤΗΘΗΚΑΝ</span></div>
+        <div class="quiz-stat"><span class="val" id="qCor">0</span><span class="lbl">ΣΩΣΤΑ</span></div>
+        <div class="quiz-stat"><span class="val">20</span><span class="lbl">ΣΥΝΟΛΟ</span></div>
+      </div>
+    </div>
+
+    <div id="quizQs">
+
+      <!-- Q1 BASIC -->
+      <div class="question-card" data-answered="false" data-qid="1" data-level="basic" data-text="Τι σημαίνει DRS">
+        <div class="q-header"><span class="q-num basic">ΒΑΣΙΚΟ</span><div class="q-text">Τι σημαίνει το αρκτικόλεξο <strong>DRS</strong>;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,1)">Daily Reconciliation Sheet</button>
+          <button class="option-btn" onclick="mcq(this,true,1)" data-correct="true">Delivery Run Sheet — η σελίδα παραδόσεων του οδηγού</button>
+          <button class="option-btn" onclick="mcq(this,false,1)">Driver Report System</button>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <!-- Q2 BASIC -->
+      <div class="question-card" data-answered="false" data-qid="2" data-level="basic" data-text="Box scan ή AWB scan στο DRS">
+        <div class="q-header"><span class="q-num basic">ΒΑΣΙΚΟ</span><div class="q-text">Ο dispatcher τι σκανάρει για να χρεώσει αποστολές στον οδηγό;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,2)">AWB αριθμό</button>
+          <button class="option-btn" onclick="mcq(this,true,2)" data-correct="true">Box αριθμό — για πλήρη απεικόνιση κάθε τεμαχίου</button>
+          <button class="option-btn" onclick="mcq(this,false,2)">Και AWB και Box</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+      </div>
+
+      <!-- Q3 BASIC -->
+      <div class="question-card" data-answered="false" data-qid="3" data-level="basic" data-text="Πού βρίσκεται το Runsheet Entry">
+        <div class="q-header"><span class="q-num basic">ΒΑΣΙΚΟ</span><div class="q-text">Πού βρίσκεται το <strong>Runsheet Entry</strong> στο CMS;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,3)">Reports → Runsheet</button>
+          <button class="option-btn" onclick="mcq(this,true,3)" data-correct="true">Operation → Runsheet Entry</button>
+          <button class="option-btn" onclick="mcq(this,false,3)">Master → Runsheet</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+      </div>
+
+      <!-- Q4 BASIC -->
+      <div class="question-card" data-answered="false" data-qid="4" data-level="basic" data-text="Πώς ενημερώνεται ο οδηγός για τις παραδόσεις">
+        <div class="q-header"><span class="q-num basic">ΒΑΣΙΚΟ</span><div class="q-text">Πώς βλέπει ο οδηγός τις αποστολές που πρέπει να παραδώσει;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,4)">Εκτυπωμένη λίστα μόνο</button>
+          <button class="option-btn" onclick="mcq(this,false,4)">Email από τον dispatcher</button>
+          <button class="option-btn" onclick="mcq(this,true,4)" data-correct="true">📱 Mobile App 4A — ενημερώνεται αυτόματα όταν μπει στο DRS</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+      </div>
+
+      <!-- Q5 MEDIUM -->
+      <div class="question-card" data-answered="false" data-qid="5" data-level="medium" data-text="Γιατί σκανάρουμε Box και όχι AWB">
+        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Γιατί σκανάρουμε <strong>Box</strong> και ΟΧΙ AWB στο Runsheet Entry;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,5)">Γιατί το AWB δεν έχει barcode</button>
+          <button class="option-btn" onclick="mcq(this,true,5)" data-correct="true">Γιατί μια αποστολή μπορεί να έχει πολλά τεμάχια — το Box scan δίνει πλήρη απεικόνιση κάθε τεμαχίου</button>
+          <button class="option-btn" onclick="mcq(this,false,5)">Γιατί είναι πιο γρήγορο</button>
+        </div>
+        <div class="feedback" id="fb5"></div>
+      </div>
+
+      <!-- Q6 MEDIUM -->
+      <div class="question-card" data-answered="false" data-qid="6" data-level="medium" data-text="Τι δείχνει το πιο έντονο πράσινο στο Route Dashboard">
+        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Στο <strong>Route Dashboard</strong>, τι σημαίνει το πιο έντονο πράσινο AWB;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,6)">Η πιο επείγουσα παράδοση</button>
+          <button class="option-btn" onclick="mcq(this,true,6)" data-correct="true">Η τελευταία παράδοση που έκανε ο οδηγός — για εύκολη πληροφόρηση του dispatcher</button>
+          <button class="option-btn" onclick="mcq(this,false,6)">Η αποστολή με το μεγαλύτερο COD</button>
+        </div>
+        <div class="feedback" id="fb6"></div>
+      </div>
+
+      <!-- Q7 MEDIUM -->
+      <div class="question-card" data-answered="false" data-qid="7" data-level="medium" data-text="Τι είναι το UnReconciled DRS">
+        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Στο COD Dashboard εμφανίζεται <strong>UnReconciled DRS = 3</strong>. Τι σημαίνει;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,7)">3 αποστολές δεν παραδόθηκαν</button>
+          <button class="option-btn" onclick="mcq(this,true,7)" data-correct="true">3 οδηγοί δεν έχουν γίνει ακόμα reconcile — πρέπει να μηδενιστεί στο τέλος της ημέρας</button>
+          <button class="option-btn" onclick="mcq(this,false,7)">3 COD δεν εισπράχθηκαν</button>
+        </div>
+        <div class="feedback" id="fb7"></div>
+      </div>
+
+      <!-- Q8 MEDIUM TF -->
+      <div class="question-card" data-answered="false" data-qid="8" data-level="medium" data-text="Η υπογραφή παραλήπτη ενημερώνει αυτόματα το σύστημα">
+        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Σωστό ή Λάθος: Όταν ο παραλήπτης υπογράψει στο Mobile App, η αποστολή ενημερώνεται αυτόματα στο σύστημα.</div></div>
+        <div class="tf-options">
+          <button class="tf-btn" onclick="tf(this,true,8)" data-correct="true">✓ Σωστό</button>
+          <button class="tf-btn" onclick="tf(this,false,8)">✗ Λάθος</button>
+        </div>
+        <div class="feedback" id="fb8"></div>
+      </div>
+
+      <!-- Q9 HARD -->
+      <div class="question-card" data-answered="false" data-qid="9" data-level="hard" data-text="Ροή Daily Reconciliation — σωστή σειρά">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Ποια είναι η σωστή ροή του <strong>Daily Reconciliation</strong> όταν επιστρέφει ο οδηγός;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,9)">Submit → Σκανάρισμα → Delivered → Pending → Return</button>
+          <button class="option-btn" onclick="mcq(this,true,9)" data-correct="true">Delivered Items ✅ → Pending Items ⏳ → Σκανάρισμα Pending → Return Items ↩️ → Submit</button>
+          <button class="option-btn" onclick="mcq(this,false,9)">Return Items → Pending → Delivered → Submit</button>
+        </div>
+        <div class="feedback" id="fb9"></div>
+      </div>
+
+      <!-- Q10 HARD -->
+      <div class="question-card" data-answered="false" data-qid="10" data-level="hard" data-text="Τι παραδίδει ο οδηγός κατά το reconciliation">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Τι παραδίδει ο οδηγός στο γραφείο κατά το Daily Reconciliation;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,10)">Μόνο τα χρήματα (COD + Freight Collect)</button>
+          <button class="option-btn" onclick="mcq(this,false,10)">Μόνο τα undelivered boxes</button>
+          <button class="option-btn" onclick="mcq(this,true,10)" data-correct="true">Χρήματα (COD + Freight Collect) ΚΑΙ όλα τα undelivered boxes</button>
+        </div>
+        <div class="feedback" id="fb10"></div>
+      </div>
+
+      <!-- Q11 HARD -->
+      <div class="question-card" data-answered="false" data-qid="11" data-level="hard" data-text="Πώς χρεώνει ο dispatcher αποστολές στον οδηγό">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Με ποια λογική χρεώνει ο dispatcher αποστολές σε κάθε οδηγό;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,11)">Τυχαία — όποιος οδηγός είναι διαθέσιμος</button>
+          <button class="option-btn" onclick="mcq(this,true,11)" data-correct="true">Σύμφωνα με τους ταχυδρομικούς κώδικες που αντιστοιχούν στις περιοχές παράδοσης κάθε οδηγού</button>
+          <button class="option-btn" onclick="mcq(this,false,11)">Με βάση το βάρος των αποστολών</button>
+        </div>
+        <div class="feedback" id="fb11"></div>
+      </div>
+
+      <!-- Q12 HARD TF -->
+      <div class="question-card" data-answered="false" data-qid="12" data-level="hard" data-text="UnReconciled DRS πρέπει να είναι 0 στο τέλος">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Σωστό ή Λάθος: Το <strong>UnReconciled DRS</strong> στο COD Dashboard πρέπει να είναι <strong>0</strong> στο τέλος κάθε ημέρας.</div></div>
+        <div class="tf-options">
+          <button class="tf-btn" onclick="tf(this,true,12)" data-correct="true">✓ Σωστό</button>
+          <button class="tf-btn" onclick="tf(this,false,12)">✗ Λάθος</button>
+        </div>
+        <div class="feedback" id="fb12"></div>
+      </div>
+
+
+      <!-- Q13 MEDIUM -->
+      <div class="question-card" data-answered="false" data-qid="13" data-level="medium" data-text="Τι κάνει ο οδηγός όταν δεν μπορεί να παραδώσει">
+        <div class="q-header"><span class="q-num medium">ΜΕΣΑΙΟ</span><div class="q-text">Ο οδηγός έχει απαράδοτα boxes. Ποια είναι η <strong>υποχρέωσή</strong> του;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,13)">Να επιστρέψει αμέσως στο γραφείο χωρίς να κάνει τίποτα</button>
+          <button class="option-btn" onclick="mcq(this,false,13)">Προχωράει κανονικά — ο dispatcher βάζει σημείωση χειροκίνητα</button>
+          <button class="option-btn" onclick="mcq(this,true,13)" data-correct="true">Ο οδηγός υποχρεούται να αιτιολογεί — είναι προσωπική ευθύνη του απέναντι στο γραφείο</button>
+        </div>
+        <div class="feedback" id="fb13"></div>
+      </div>
+
+      <!-- Q14 HARD -->
+      <div class="question-card" data-answered="false" data-qid="14" data-level="hard" data-text="Πορτοκαλί χρώμα Route Dashboard — τι σημαίνει">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Στο Route Dashboard μια αποστολή εμφανίζεται με <strong>πορτοκαλί</strong> χρώμα. Τι σημαίνει;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,14)">Η αποστολή έχει COD και δεν εισπράχθηκε</button>
+          <button class="option-btn" onclick="mcq(this,false,14)">Εκκρεμεί παράδοση χωρίς καμία ενέργεια από τον οδηγό</button>
+          <button class="option-btn" onclick="mcq(this,true,14)" data-correct="true">Η αποστολή δεν παραδόθηκε αλλά έχει αιτιολογηθεί ορθά από τον οδηγό στο Mobile App</button>
+        </div>
+        <div class="feedback" id="fb14"></div>
+      </div>
+
+
+      <!-- Q15 HARD -->
+      <div class="question-card" data-answered="false" data-qid="15" data-level="hard" data-text="Σκανάρισμα AWB με 1 τεμάχιο — το δέχεται το σύστημα">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span>
+          <div>
+            <div class="q-text">Αποστολή με <strong>1 τεμάχιο</strong> — ο dispatcher σκανάρει τον <strong>AWB αριθμό</strong> αντί για Box. Το σύστημα τι κάνει;</div>
+          </div>
+        </div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,15)">Απορρίπτει το scan — επιτρέπεται μόνο Box</button>
+          <button class="option-btn" onclick="mcq(this,true,15)" data-correct="true">Αποδέχεται — όταν η αποστολή έχει 1 τεμάχιο, AWB = Box, οπότε δεν υπάρχει διαφορά</button>
+          <button class="option-btn" onclick="mcq(this,false,15)">Αποδέχεται αλλά δίνει προειδοποίηση</button>
+        </div>
+        <div class="feedback" id="fb15"></div>
+      </div>
+
+
+      <!-- Q15 HARD -->
+      <div class="question-card" data-answered="false" data-qid="15" data-level="hard" data-text="Ποιος είναι υπεύθυνος για τα τεμάχια μετά την παραλαβή από τον οδηγό">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span><div class="q-text">Ο dispatcher παραδίδει 12 boxes στον οδηγό. Ο οδηγός δεν ελέγχει τον αριθμό και φεύγει. Αργότερα λείπει 1 box. Ποιος είναι υπεύθυνος;</div></div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,15)">Ο dispatcher — αυτός έκανε το DRS</button>
+          <button class="option-btn" onclick="mcq(this,false,15)">Και οι δύο εξίσου</button>
+          <button class="option-btn" onclick="mcq(this,true,15)" data-correct="true">Ο οδηγός — από τη στιγμή παραλαβής είναι αποκλειστικά υπεύθυνος για όλα τα τεμάχια</button>
+        </div>
+        <div class="feedback" id="fb15"></div>
+      </div>
+
+
+      <!-- Q16 HARD -->
+      <div class="question-card" data-answered="false" data-qid="16" data-level="hard" data-text="Αποστολή 1 τεμαχίου — σκανάρει AWB αντί Box">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span>
+          <div>
+            <div class="q-text">Αποστολή με <strong>1 τεμάχιο</strong> — ο dispatcher σκανάρει τον <strong>AWB αριθμό</strong> αντί για Box για τη δημιουργία DRS. Το σύστημα τι κάνει;</div>
+          </div>
+        </div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,16)">Το αποδέχεται — 1 τεμάχιο = 1 AWB</button>
+          <button class="option-btn" onclick="mcq(this,false,16)">Εμφανίζει warning αλλά συνεχίζει</button>
+          <button class="option-btn" onclick="mcq(this,false,16)">Δημιουργεί το DRS με το AWB</button>
+          <button class="option-btn" onclick="mcq(this,true,16)" data-correct="true">Κανένα από αυτά — το σύστημα δεν αποδέχεται AWB, μόνο Box scan</button>
+        </div>
+        <div class="feedback" id="fb16"></div>
+      </div>
+
+
+      <!-- Q17 HARD -->
+      <div class="question-card" data-answered="false" data-qid="17" data-level="hard" data-text="2 δέματα ίδιο AWB διαφορετικό Box — μεταγενέστερη ημερομηνία DRS">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span>
+          <div>
+            <div class="q-text">Αποστολή με <strong>2 δέματα</strong> — ίδιο AWB Number, διαφορετικό Box Number. Μπορεί να ανατεθεί σε οδηγό με DRS <strong>μεταγενέστερης ημερομηνίας</strong>;</div>
+          </div>
+        </div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,17)">Ναι — αρκεί να είναι ίδιος οδηγός</button>
+          <button class="option-btn" onclick="mcq(this,false,17)">Ναι — αν το εγκρίνει ο dispatcher</button>
+          <button class="option-btn" onclick="mcq(this,true,17)" data-correct="true">Όχι — το DRS δεν μπορεί να δημιουργηθεί για επόμενη ημέρα, ισχύει μόνο για την τρέχουσα</button>
+        </div>
+        <div class="feedback" id="fb17"></div>
+      </div>
+
+
+      <!-- Q18 HARD multi-select -->
+      <div class="question-card" data-answered="false" data-qid="18" data-level="hard" data-text="Λόγοι που δεν επιτρέπουν είσοδο box στο DRS">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span>
+          <div>
+            <div class="q-text">Ποιοι από τους παρακάτω λόγους <strong>δεν επιτρέπουν</strong> σε ένα box να μπει στο DRS; <em style="font-size:11px;color:var(--muted);">(Επίλεξε όσες είναι σωστές)</em></div>
+          </div>
+        </div>
+        <div id="ms18" style="display:flex;flex-direction:column;gap:6px;">
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-family:'Lora',serif;font-size:13px;background:white;transition:all .15s;" id="ms18_1">
+            <input type="checkbox" value="correct" style="margin-top:3px;flex-shrink:0;"> Προγραμματισμένο για μεταχρονολογημένη ημερομηνία
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-family:'Lora',serif;font-size:13px;background:white;" id="ms18_2">
+            <input type="checkbox" value="correct" style="margin-top:3px;flex-shrink:0;"> Self Pickup — ο παραλήπτης θα περάσει από το γραφείο
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-family:'Lora',serif;font-size:13px;background:white;" id="ms18_3">
+            <input type="checkbox" value="correct" style="margin-top:3px;flex-shrink:0;"> Έχει σκαναριστεί λάθος το box
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-family:'Lora',serif;font-size:13px;background:white;" id="ms18_4">
+            <input type="checkbox" value="correct" style="margin-top:3px;flex-shrink:0;"> Το box δεν ανήκει στον σταθμό
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-family:'Lora',serif;font-size:13px;background:white;" id="ms18_5">
+            <input type="checkbox" value="wrong" style="margin-top:3px;flex-shrink:0;"> Το box είχε χαθεί αλλά ξαναβρέθηκε
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-family:'Lora',serif;font-size:13px;background:white;" id="ms18_6">
+            <input type="checkbox" value="correct" style="margin-top:3px;flex-shrink:0;"> Το box έχει παραδοθεί
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-family:'Lora',serif;font-size:13px;background:white;" id="ms18_7">
+            <input type="checkbox" value="wrong" style="margin-top:3px;flex-shrink:0;"> Το box έγινε reconciliation με χθεσινή ημερομηνία
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-family:'Lora',serif;font-size:13px;background:white;" id="ms18_8">
+            <input type="checkbox" value="wrong" style="margin-top:3px;flex-shrink:0;"> Ο ΤΚ δεν αντιστοιχεί στην περιοχή του οδηγού
+          </label>
+        </div>
+        <button class="check-btn" style="margin-top:10px;" onclick="checkMulti(18)">Έλεγχος</button>
+        <div class="feedback" id="fb18"></div>
+      </div>
+
+
+      <!-- Q19 HARD -->
+      <div class="question-card" data-answered="false" data-qid="19" data-level="hard" data-text="Undelivered στο κινητό — παραλήπτης διαθέσιμος ξαφνικά">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span>
+          <div>
+            <div class="q-text">Ο οδηγός έχει καταχωρήσει αποστολή ως <strong>undelivered</strong> στο Mobile App. Ο παραλήπτης επικοινωνεί και είναι διαθέσιμος. Τι γίνεται;</div>
+          </div>
+        </div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,true,19)" data-correct="true">Ναι — ο οδηγός μπορεί να παραδώσει αμέσως. Δεν έχει γίνει return η αποστολή, άρα είναι ακόμα στα χέρια του</button>
+          <button class="option-btn" onclick="mcq(this,false,19)">Όχι — πρέπει να ζητήσει νέο DRS από τον dispatcher υποχρεωτικά</button>
+          <button class="option-btn" onclick="mcq(this,false,19)">Καταχωρείται για την επόμενη ημέρα αυτόματα</button>
+          <button class="option-btn" onclick="mcq(this,false,19)">Δεν μπορεί να παραδώσει — πρέπει να επιστρέψει στο γραφείο πρώτα</button>
+        </div>
+        <div class="feedback" id="fb19"></div>
+      </div>
+
+
+      <!-- Q20 HARD -->
+      <div class="question-card" data-answered="false" data-qid="20" data-level="hard" data-text="Οδηγός δεν εισπράττει αντικαταβολή από λάθος — ποιος υπεύθυνος">
+        <div class="q-header"><span class="q-num hard">ΔΥΣΚΟΛΟ</span>
+          <div>
+            <div class="q-text">Ο οδηγός παραδίδει αποστολή με αντικαταβολή <strong>50€</strong> αλλά από απροσεξία δεν εισπράττει. Παρά τις προσπάθειες επικοινωνίας με τον παραλήπτη, τα χρήματα δεν εισπράττονται. Ποιος είναι υπεύθυνος;</div>
+          </div>
+        </div>
+        <div class="options">
+          <button class="option-btn" onclick="mcq(this,false,20)">Ο υπεύθυνος αντικαταβολών — αυτός έπρεπε να ελέγξει</button>
+          <button class="option-btn" onclick="mcq(this,false,20)">Ο dispatcher — αυτός έφτιαξε το DRS</button>
+          <button class="option-btn" onclick="mcq(this,false,20)">Η εταιρία — είναι επαγγελματικό ρίσκο</button>
+          <button class="option-btn" onclick="mcq(this,true,20)" data-correct="true">Αποκλειστικά ο οδηγός — είναι προσωπικά υπεύθυνος για κάθε αντικαταβολή του DRS του</button>
+        </div>
+        <div class="feedback" id="fb20"></div>
+      </div>
+
+    </div><!-- /quizQs -->
+
+    <div class="score-section" id="sc_sec">
+      <div class="score-circle">
+        <div class="score-num" id="sc_num">0</div>
+        <div class="score-denom">/ 20</div>
+      </div>
+      <div class="score-title" id="sc_title">—</div>
+      <div class="score-msg" id="sc_msg">—</div>
+      <div class="score-breakdown">
+        <div class="score-item correct-s"><span class="si-val" id="sb_cor">0</span><span class="si-lbl">ΣΩΣΤΑ</span></div>
+        <div class="score-item wrong-s"><span class="si-val" id="sb_wr">0</span><span class="si-lbl">ΛΑΘΗ</span></div>
+        <div class="score-item pct-s"><span class="si-val" id="sb_pct">0%</span><span class="si-lbl">ΠΟΣΟΣΤΟ</span></div>
+      </div>
+      <div class="wrong-analysis" id="wrongAnalysis" style="display:none;">
+        <h3>❌ Ερωτήσεις που χρειάζονται επανάληψη:</h3>
+        <div id="wrongList"></div>
+      </div>
+      <div class="action-btns">
+        <button class="retry-btn" onclick="rstQ()">🔄 Ξαναπροσπάθεια</button>
+        <button class="study-btn" onclick="showSection('training',document.querySelectorAll('.nav-tab')[0])">📖 Επανάληψη Υλικού</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /quiz -->
+</main>
+
+<div class="footer">4A EXPRESS · O08 DRS & DAILY RECONCILIATION · v1.0 · 21/04/2026</div>
+
+<script>
+const SHEETS_API='https://script.google.com/macros/s/AKfycbwBcuHINXWCT1Qr4K87T5wjlj7RAojucKmRNgIlIau2ZsTzSo25fdFfBcnu-OhLVAxyhA/exec';
+const TOTAL=20;
+let correctCount=0,answeredCount=0,currentExaminer='',wrongQuestions=[];
+
+const feedbacks={
+  1:{c:'✅ Σωστά! DRS = Delivery Run Sheet = η σελίδα παραδόσεων του οδηγού.',w:'❌ Λάθος. DRS = Delivery Run Sheet — η λίστα παραδόσεων που έχει ο οδηγός.'},
+  2:{c:'✅ Σωστά! Σκανάρουμε Box — για πλήρη απεικόνιση κάθε τεμαχίου.',w:'❌ Λάθος. Σκανάρουμε πάντα Box — ΟΧΙ AWB. Μια αποστολή μπορεί να έχει πολλά boxes.'},
+  3:{c:'✅ Σωστά! Operation → Runsheet Entry.',w:'❌ Λάθος. Βρίσκεται στο Operation → Runsheet Entry.'},
+  4:{c:'✅ Σωστά! Το Mobile App 4A ενημερώνεται αυτόματα όταν μπει η αποστολή στο DRS.',w:'❌ Λάθος. Ο οδηγός βλέπει τις παραδόσεις στο 📱 Mobile App 4A — ενημερώνεται αυτόματα.'},
+  5:{c:'✅ Σωστά! Box scan = πλήρης απεικόνιση κάθε τεμαχίου μιας αποστολής.',w:'❌ Λάθος. Σκανάρουμε Box γιατί μια αποστολή μπορεί να έχει πολλά τεμάχια — το Box scan δίνει πλήρη εικόνα.'},
+  6:{c:'✅ Σωστά! Το πιο έντονο πράσινο = τελευταία παράδοση οδηγού.',w:'❌ Λάθος. Το πιο έντονο πράσινο = η τελευταία παράδοση του οδηγού — για εύκολη πληροφόρηση του dispatcher.'},
+  7:{c:'✅ Σωστά! UnReconciled DRS = 3 σημαίνει 3 οδηγοί χωρίς reconciliation.',w:'❌ Λάθος. UnReconciled DRS = αριθμός οδηγών που δεν έχουν γίνει ακόμα reconcile.'},
+  8:{c:'✅ Σωστά! Η υπογραφή στο Mobile App ενημερώνει αυτόματα το σύστημα.',w:'❌ Λάθος. Ναι, με την υπογραφή στο Mobile App η αποστολή ενημερώνεται αυτόματα.'},
+  9:{c:'✅ Σωστά! Delivered → Pending → Σκανάρισμα → Return → Submit.',w:'❌ Λάθος. Σωστή σειρά: Delivered Items ✅ → Pending Items ⏳ → Σκανάρισμα Pending → Return Items ↩️ → Submit.'},
+  10:{c:'✅ Σωστά! Ο οδηγός παραδίδει χρήματα ΚΑΙ όλα τα undelivered boxes.',w:'❌ Λάθος. Και τα δύο — χρήματα (COD + Freight Collect) ΚΑΙ όλα τα undelivered boxes.'},
+  11:{c:'✅ Σωστά! Κατανομή βάσει ταχυδρομικών κωδίκων — κάθε οδηγός έχει τις δικές του περιοχές.',w:'❌ Λάθος. Ο dispatcher χρεώνει βάσει ταχυδρομικών κωδίκων — κάθε οδηγός έχει συγκεκριμένες περιοχές.'},
+  12:{c:'✅ Σωστά! UnReconciled DRS πρέπει να είναι 0 στο τέλος της ημέρας.',w:'❌ Λάθος. Ναι, πρέπει να μηδενιστεί — σημαίνει ότι όλοι οι οδηγοί έχουν ξεχρεωθεί.'},
+  13:{c:'✅ Σωστά! Ο οδηγός υποχρεούται να αιτιολογεί κάθε απαράδοτο — είναι προσωπική ευθύνη του.',w:'❌ Λάθος. Ο οδηγός υποχρεούται να αιτιολογεί κάθε απαράδοτο box στο Mobile App. Είναι προσωπική υποχρέωσή του.'},
+  14:{c:'✅ Σωστά! Πορτοκαλί = UnDelivered με ορθή αιτιολόγηση από τον οδηγό.',w:'❌ Λάθος. Πορτοκαλί = η αποστολή δεν παραδόθηκε αλλά ο οδηγός έχει αιτιολογήσει το status της στο Mobile App.'},
+  15:{c:'✅ Σωστά! Από τη στιγμή παραλαβής ο οδηγός είναι ΑΠΟΚΛΕΙΣΤΙΚΑ υπεύθυνος για όλα τα τεμάχια.',w:'❌ Λάθος. Ο οδηγός είναι αποκλειστικά υπεύθυνος — γι αυτό και η επαλήθευση με τον dispatcher πριν φύγει είναι υποχρεωτική.'},
+  16:{c:'✅ Σωστά! Κανένα από αυτά — το σύστημα δεν αποδέχεται AWB στο DRS. Πάντα Box scan.',w:'❌ Λάθος. Το σύστημα δεν αποδέχεται AWB — ακόμα και με 1 τεμάχιο πρέπει να σκαναριστεί ο Box αριθμός.'},
+  17:{c:'✅ Σωστά! Όχι — το DRS ισχύει αποκλειστικά για την τρέχουσα ημέρα. Δεν μπορεί να δημιουργηθεί για επόμενη.',w:'❌ Λάθος. Το DRS δεν μπορεί να δημιουργηθεί για μεταγενέστερη ημερομηνία — ισχύει μόνο για την τρέχουσα ημέρα.'},
+  19:{c:'✅ Σωστά! Η αποστολή δεν έχει γίνει return — είναι ακόμα στα χέρια του οδηγού. Μπορεί να παραδώσει αμέσως.',w:'❌ Λάθος. Ο οδηγός μπορεί να παραδώσει αμέσως — δεν έχει γίνει return η αποστολή, άρα είναι ακόμα στα χέρια του.'},
+  20:{c:'✅ Σωστά! Αποκλειστικά ο οδηγός — είναι προσωπικά υπεύθυνος για κάθε αντικαταβολή που αναγράφεται στο DRS του.',w:'❌ Λάθος. Ο οδηγός είναι ΑΠΟΚΛΕΙΣΤΙΚΑ υπεύθυνος — ακόμα και από λάθος, η ευθύνη βαρύνει τον ίδιο.'},
+  15:{c:'✅ Σωστά! Το σύστημα αποδέχεται — 1 τεμάχιο σημαίνει AWB = Box, άρα δεν υπάρχει διαφορά.',w:'❌ Λάθος. Όταν η αποστολή έχει 1 τεμάχιο, AWB = Box — το σύστημα αποδέχεται γιατί δεν υπάρχει διαφορά.'},
+};
+
+function goToQuiz(btn){
+  showSection('quiz',btn);
+  document.getElementById('ngat').style.display='flex';
+  document.getElementById('qcont').style.display='none';
+  document.getElementById('sc_sec').classList.remove('show');
+  document.getElementById('quizQs').style.display='block';
+}
+
+function startQuiz(){
+  const inp=document.getElementById('nameInput');
+  const name=inp.value.trim();
+  if(name.length<3){inp.classList.add('error');document.getElementById('nameError').textContent='Παρακαλώ εισάγετε πλήρες ονοματεπώνυμο.';return;}
+  currentExaminer=name;correctCount=0;answeredCount=0;wrongQuestions=[];
+  document.getElementById('qExaminer').textContent=name;
+  document.getElementById('qAns').textContent='0';
+  document.getElementById('qCor').textContent='0';
+  document.getElementById('ngat').style.display='none';
+  document.getElementById('qcont').style.display='block';
+  updateProgress();
+}
+
+function mcq(btn,correct,qid){
+  const card=btn.closest('[data-qid]');
+  if(card.dataset.answered==='true')return;
+  card.dataset.answered='true';
+  card.querySelectorAll('.option-btn').forEach(b=>{
+    b.disabled=true;
+    if(b===btn)b.classList.add(correct?'correct':'wrong');
+    else if(!correct&&b.dataset.correct==='true')b.classList.add('reveal');
+  });
+  showFB(qid,correct);
+  if(correct)correctCount++;else wrongQuestions.push({id:qid,level:card.dataset.level,text:card.dataset.text});
+  answeredCount++;
+  document.getElementById('qAns').textContent=answeredCount;
+  document.getElementById('qCor').textContent=correctCount;
+  updateProgress();
+  if(answeredCount===TOTAL)setTimeout(showScore,700);
+}
+
+function tf(btn,correct,qid){mcq(btn,correct,qid);}
+
+function showFB(qid,correct){
+  const fb=document.getElementById('fb'+qid);
+  fb.textContent=correct?feedbacks[qid].c:feedbacks[qid].w;
+  fb.className='feedback show '+(correct?'correct-fb':'wrong-fb');
+}
+
+function showScore(){
+  const pct=Math.round((correctCount/TOTAL)*100);
+  document.getElementById('sc_num').textContent=correctCount;
+  document.getElementById('sb_cor').textContent=correctCount;
+  document.getElementById('sb_wr').textContent=TOTAL-correctCount;
+  document.getElementById('sb_pct').textContent=pct+'%';
+  let title,msg;
+  if(pct>=90){title='🏆 Άριστα!';msg='Εξαιρετική γνώση DRS & Reconciliation!';}
+  else if(pct>=70){title='👍 Καλά!';msg='Καλή βάση — επανέλαβε τα σημεία αδυναμίας.';}
+  else if(pct>=50){title='📚 Χρειάζεται επανάληψη';msg='Ξαναδιάβασε τις ενότητες και δοκίμασε ξανά.';}
+  else{title='🔄 Επανέλαβε το υλικό';msg='Εστίασε στη ροή DRS και Daily Reconciliation.';}
+  document.getElementById('sc_title').textContent=title;
+  document.getElementById('sc_msg').textContent=msg;
+  if(wrongQuestions.length>0){
+    document.getElementById('wrongList').innerHTML=wrongQuestions.map(w=>`<div class="wrong-item"><div class="wi-q">Ερ.${w.id}: ${w.text}</div><span class="wrong-tag ${w.level}">${w.level==='basic'?'ΒΑΣΙΚΟ':w.level==='medium'?'ΜΕΣΑΙΟ':'ΔΥΣΚΟΛΟ'}</span></div>`).join('');
+    document.getElementById('wrongAnalysis').style.display='block';
+  }
+  document.getElementById('sc_sec').classList.add('show');
+  saveResult(pct);
+}
+
+async function saveResult(pct){
+  try{
+    const wrongIds=wrongQuestions.map(w=>'Ερ.'+w.id).join(', ')||'—';
+    const params=new URLSearchParams({
+      timestamp:new Date().toLocaleString('el-GR'),
+      name:currentExaminer,role:'—',office:'—',
+      module:'O08 · DRS & Daily Reconciliation',
+      score:correctCount+'/'+TOTAL,wrong:wrongIds
+    });
+    await fetch(SHEETS_API+'?'+params.toString(),{mode:'no-cors'});
+  }catch(e){console.log('Sheets:',e);}
+}
+
+function rstQ(){
+  correctCount=0;answeredCount=0;wrongQuestions=[];
+  document.getElementById('qAns').textContent='0';
+  document.getElementById('qCor').textContent='0';
+  document.getElementById('sc_sec').classList.remove('show');
+  document.getElementById('wrongAnalysis').style.display='none';
+  document.getElementById('quizQs').style.display='block';
+  document.querySelectorAll('[data-qid]').forEach(card=>{
+    card.dataset.answered='false';
+    card.querySelectorAll('.option-btn,.tf-btn').forEach(b=>{b.disabled=false;b.className=b.className.includes('option-btn')?'option-btn':'tf-btn';});
+    card.querySelectorAll('.feedback').forEach(f=>{f.className='feedback';f.textContent='';});
+  });
+  document.getElementById('nameInput').value='';
+  document.getElementById('nameInput').classList.remove('error');
+  document.getElementById('nameError').textContent='';
+  document.getElementById('ngat').style.display='flex';
+  document.getElementById('qcont').style.display='none';
+  updateProgress();
+}
+
+function showSection(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  updateProgress();
+}
+
+function checkMulti(qid){
+  const card=document.querySelector('[data-qid="'+qid+'"]');
+  if(card.dataset.answered==='true')return;
+  const labels=card.querySelectorAll('label');
+  let allCorrect=true;
+  let anyChecked=false;
+  labels.forEach(lbl=>{
+    const cb=lbl.querySelector('input');
+    const isChecked=cb.checked;
+    const isCorrect=cb.value==='correct';
+    if(isChecked)anyChecked=true;
+    if(isChecked&&!isCorrect)allCorrect=false;
+    if(!isChecked&&isCorrect)allCorrect=false;
+    cb.disabled=true;
+    if(isCorrect){lbl.style.background='#f0fdf4';lbl.style.borderColor='#22c55e';}
+    else if(isChecked&&!isCorrect){lbl.style.background='#fff5f5';lbl.style.borderColor='#cc1020';}
+  });
+  if(!anyChecked){labels.forEach(lbl=>{lbl.querySelector('input').disabled=false;});return;}
+  card.dataset.answered='true';
+  card.querySelector('.check-btn').disabled=true;
+  const fb=document.getElementById('fb'+qid);
+  if(allCorrect){
+    fb.textContent='✅ Σωστά! Οι 5 λόγοι: μεταχρονολογημένη ημερομηνία, Self Pickup, box άλλου σταθμού, box παραδοθέν, λάθος σκανάρισμα box.';
+    fb.className='feedback show correct-fb';
+    correctCount++;
+  } else {
+    fb.textContent='❌ Λάθος. Σωστές (5): μεταχρονολογημένη ημερομηνία · Self Pickup · box άλλου σταθμού · box παραδοθέν · λάθος σκανάρισμα box. Οι υπόλοιπες ΔΕΝ εμποδίζουν.';
+    fb.className='feedback show wrong-fb';
+    wrongQuestions.push({id:qid,level:card.dataset.level,text:card.dataset.text});
+  }
+  answeredCount++;
+  document.getElementById('qAns').textContent=answeredCount;
+  document.getElementById('qCor').textContent=correctCount;
+  updateProgress();
+  if(answeredCount===TOTAL)setTimeout(showScore,700);
+}
+
+function updateProgress(){
+  const isQuiz=document.getElementById('quiz').classList.contains('active');
+  const fill=document.getElementById('progressFill');
+  const label=document.getElementById('progressLabel');
+  const pct=document.getElementById('progressPct');
+  if(isQuiz&&document.getElementById('qcont').style.display!=='none'){
+    const p=Math.round((answeredCount/TOTAL)*100);
+    fill.style.width=p+'%';label.textContent=currentExaminer||'Αξιολόγηση';pct.textContent=p+'%';
+  }else if(isQuiz){
+    fill.style.width='0%';label.textContent='Αξιολόγηση';pct.textContent='0%';
+  }else{
+    fill.style.width='100%';label.textContent='Εκπαιδευτικό Υλικό';pct.textContent='100%';
+  }
+}
+</script>
+</body>
+</html>
